@@ -1,0 +1,141 @@
+*, *::before, *::after {
+	font: inherit;
+	color: inherit;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: inherit;
+	line-height: inherit;
+	box-shadow: none;
+	box-sizing: border-box;
+}
+
+html, body {
+	height: 100%;
+}
+
+html {
+	background: #EEE;
+}
+
+body {
+	font: 400 1rem sans-serif;
+	color: #424242;
+	line-height: 1.5rem;
+}
+
+main {
+	max-width: 50rem;
+	margin: 2rem auto;
+}
+
+main p + p {
+	margin-top: 1.5rem;
+}
+
+form p {
+	padding-top: 1.5rem;
+}
+
+form.anim p {
+	position: relative;
+}
+
+form p + p {
+	margin-top: 0;
+}
+
+label {
+	font-weight: 600;
+}
+
+form span.desc {
+	display: block;
+	font-size: 90%;
+	height: 1.5rem;
+	transition: all 0.2s ease-out;
+}
+
+form p label {
+	position: absolute;
+	top: 0;
+	font-size: 90%;
+	opacity: 1;
+	transform: translateY( 0 );
+	transition: all 0.2s ease-out;
+}
+
+::placeholder {
+	opacity: 1;
+}
+
+input, textarea {
+	border-bottom: .2rem solid #9E9E9E;
+}
+
+input[type="text"], textarea {
+	padding: .5rem 0;
+}
+
+input[type="submit"] {
+	padding: .5rem 0;
+	cursor: pointer;
+	border-color: #0277BD;
+}
+
+input[type="submit"].draft {
+	border-color: #43A047;
+}
+
+input[type="submit"]:hover {
+	border-color: #0D47A1;
+}
+
+input + input {
+	margin-left: 1rem;
+}
+
+input:placeholder-shown + label, textarea:placeholder-shown + label {
+	opacity: 0;
+	transform: translateY( 1rem );
+}
+
+form.anim input[type="text"], form.anim textarea {
+	display: block;
+	width: 100%;
+}
+
+[data-feature="autoheight"] {	
+	height: 2.7rem;
+	min-height: 2.7rem;
+	resize: vertical;
+}
+
+input:invalid:not(:placeholder-shown) ~ span.desc::after, textarea:invalid:not(:placeholder-shown) ~ span.desc::after {
+	content: attr(data-validation);
+}
+
+input:read-only, textarea:read-only {
+	border-color: #BBB;
+	color: #555;
+}
+
+input:required:valid ~ span.desc, textarea:required:valid ~ span.desc, input:optional:valid:not(:placeholder-shown) ~ span.desc, textarea:optional:valid:not(:placeholder-shown) ~ span.desc {
+	opacity: 0;
+}
+
+input:valid:not([type="submit"]):focus, textarea:valid:not([type="submit"]):focus {
+	border-color: #000;
+}
+
+input:invalid, textarea:invalid {
+	border-color: #F33;
+}
+
+input:invalid:focus, textarea:invalid:focus {
+	border-color: #F00;
+}
+
+input:invalid ~ span.desc, textarea:invalid ~ span.desc {
+	color: #F33;
+}
