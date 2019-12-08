@@ -5,13 +5,19 @@
 <title>Editor test</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body data-feature="droppable:prog=bdrop&prev=filepreview&sign=dropsign&limit=20url=/">
+<body data-feature="droppable:prog=bdrop&prev=filepreview&sign=dropsign&limit=20&form=editorurl=/editor/uploads">
+<header>
+<nav class="links">
+	<ul>
+		<li><a href="/">Home</a></li>
+		<li><a href="/editor/uploads">Uploads</a></li>
+	</ul>
+</nav>
+</header>
 <main>
-<form class="anim" method="post" 
-	enctype="multipart/form-data">
+<form id="editor" class="anim" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="token" value="">
 	<input type="hidden" name="nonce" value="">
-	<progress id="bdrop" value="0" max="100"></progress>
 	<p>
 		<input type="text" id="title" placeholder="Title" 
 			pattern=".{4,}" aria-describedby="title-desc" 
@@ -33,7 +39,7 @@
 			aria-describedby="slug-desc">
 		<label for="slug">Slug:</label>
 		<span  id="slug-desc" data-validation=". 4 Or more charcters." 
-			class="desc">Will be auto-generated if blank</span>
+			class="desc">Optional, auto-generated if blank</span>
 	</p>
 	<p>
 		<input type="text" id="tags" placeholder="Tags"
@@ -41,14 +47,14 @@
 			aria-describedby="tag-desc">
 		<label for="tags">Tags:</label>
 		<span id="tag-desc" class="desc" 
-			data-validation=". 3 Characters per tag.">Optional</span>
+			data-validation=". At least 3 characters">Optional</span>
 	</p>
 	<p>
 		<input type="submit" name="post" value="Post" /> 
 		<input type="submit" name="draft" value="Save draft" 
 			class="draft" />
-		<label for="upload" class="btn upload">Upload</label>
 	</p>
+	<progress id="bdrop" value="0" max="100"></progress>
 </form>
 <div id="filepreview" class="preview"></div>
 </main>
