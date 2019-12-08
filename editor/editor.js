@@ -250,6 +250,17 @@ function uniqueWords( words, ch1, ch2, max ) {
 	} ).join( ch2 );
 }
 
+function getClipboard( e ) {
+	if ( e.clipboardData ) {
+		return e.clipboardData.getData( 'text/plain' );
+	}
+	
+	if ( window.clipboardData ) {
+		return window.clipboardData.getData( 'Text' );
+	}
+	return '';
+}
+
 
 
 
@@ -314,6 +325,148 @@ function insertTag( box, tag ) {
 	box.value	= uniqueWords( c, ',', ', ' );
 }
 
+// Generate a request token hash based on the current browser
+// Enables simple early XSRF rejection before more in-depth checks
+function requestHash( token ) {
+	var sh	= 0;
+	
+	// This property should match User-Agent sent in headers
+	const 
+	ua	= ( navigator.userAgent || '' ) + token;
+	
+	// This should match the server-side algorithm
+	for ( let i = 0; i < ua.length; i++ ) {
+		sh = ( sh * 31 ) + ua.charCodeAt(i);
+		sh |= 0;
+	}
+	
+	return btoa( '' + sh );
+}
+
+// Find or create the xhr hidden input
+function xhrField( f ) {
+	const a = find( 'input[name="xhr"]', f );
+	if ( a.length ) {
+		 return a[0];
+	}
+	const x = create( 'input' );
+	attr( x, 'type', 'hidden' );
+	attr( x, 'name', 'xhr' );
+	f.appendChild( x );
+	
+	return x;
+}
+
+// xhr compabtible form field with nonce and token
+function coreFields( f ) {
+	// Get parent form with token and nonce fields
+	const
+	fields	= {
+		"token" : find( 'input[name="token"]', f )[0],
+		"nonce" : find( 'input[name="nonce"]', f )[0],
+		"xhr"	: xhrField( f )
+	};
+	
+	// Set xhr code based on current token
+	attr( fields.xhr, 'value', requestHash( fields.token.value ) );
+	
+	return fields;
+}
+
+// Apply new token and nonce values with response
+function resetCoreFields( fields, response ) {
+	fields.token.value	= response.token;
+	fields.nonce.value	= response.nonce;
+}
+
+// Create AJAX request
+function request( form, path ) {
+	const
+	xhr	= new XMLHttpRequest(),
+	method	= getAttr( form, 'method', 'POST' ),
+	accept	= getAttr( form, 'accept-charset', 'UTF-8' );
+	enctype	= getAttr( form, 'enctype', 
+		'application/x-www-form-urlencoded' );
+	
+	
+	path	= path || getAttr( form, 'action', '/' );
+	xhr.open( method.toUpperCase(), path, true );
+	
+	// Change headers
+	xhr.setRequestHeader( 'Content-Type', enctype );
+	xhr.setRequestHeader( 'Accept-Charset', 'charset=' + accept );
+	xhr.setRequestHeader( 'X-Requested-With', 'XMLHttpRequest' );
+	
+	return xhr;
+}
+
+// Change current page url
+function changeUrl( u, t, d ) {
+	d = d || {};
+	window.history.pushState( d, t, u );
+}
+
+function previewUploads( box, files ) {
+	
+}
+
+function cleanDrop( box, sign ) {
+	find( '.' + sign, box ).forEach( 
+		e => e.parentNode.removeChild( e )
+	);
+	box.classList.remove( 'over' );
+}
+
+function dropOver( box, sign ) {
+	if ( box.is_txt ) {
+		return;
+	}
+	
+	var dv = find ( '.' + sign, box );
+	if ( !dv.length ) {
+		var dr = create( 'div' );
+		attr( dr, 'class', sign );
+		box.appendChild( dr );
+	}
+	box.classList.add( 'over' );
+}
+
+
+// File drop processing
+function canDrop( box, opts ) {
+	var wf		= false;
+	
+	// Prerequisites
+	if (
+		window.File		&& 
+		window.FileReader	&& 
+		window.FileList		&& 
+		window.Blob 
+	) {
+		wf = true;
+	}
+	
+	// Skip these when changing droppable styling
+	box.is_txt	= isA( box, 'input, textarea, span' );
+	
+	listen( box, 'dragover', function( e ) {
+		e.stopPropagation();
+		e.preventDefault();
+		dropOver( this, opts.sign );
+	}, false );
+	
+	listen( box, 'dragleave, drop', function( e ) {
+		cleanDrop( this, opts.sign );
+	}, false );
+	
+	listen( box, 'drop', function( e ) {
+		e.stopPropagation();
+		e.preventDefault();
+		if ( wf ) {
+			previewUploads( this, e.dataTransfer.files );
+		}
+	}, false );
+}
 
 /**
  *  Feature handlers
@@ -370,6 +523,17 @@ function makeTagable( box, params ) {
 	}, false );
 }
 
+// File drop enable
+function makeDroppable( box, params ) {
+	const opts	= getOptions( params );
+	opts.prog	= opts.prog	|| '';
+	opts.prev	= opts.prev	|| '';
+	opts.url	= opts.url	|| '';
+	opts.sign	= opts.sign	|| 'dropsign';
+	opts.limit	= opts.limit	|| 20;
+	
+	canDrop( box, opts );
+}
 
 
 // Load activation features
@@ -401,6 +565,10 @@ function findFeatures( box ) {
 				
 			case 'tags':
 				makeTagable( box, p[1] );
+				break;
+				
+			case 'droppable':
+				makeDroppable( box, p[1] );
 				break;
 		}
 	} );
