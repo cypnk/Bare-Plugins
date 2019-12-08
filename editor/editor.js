@@ -104,6 +104,12 @@ function cut( str, n ) {
 	return str.substring( 0, str.length - n );
 }
 
+// Trim text to given length
+function trunc( str, n ) {
+	return ( str.length > n ) ? 
+		str.substring( 0, n ) : str;
+}
+
 // Check if text had been selected
 function checkSelect( box ) {
 	const sel = selection( box );
@@ -269,8 +275,8 @@ function getClipboard( e ) {
  */
 
 // Convert title text to slug
-function makeSlug( sx, v ) {
-	sx.value = 
+function makeSlug( sx, v, m ) {
+	v		= 
 	v.toLowerCase()
 		// Remove non-letters
 		// Firefox fallback (to be removed in the future)
@@ -288,6 +294,8 @@ function makeSlug( sx, v ) {
 		.replace( /-+/g,'-' )
 		.replace( /-+$/, '' )
 		.replace( /^-+/, '' );
+	
+	sx.value	= trunc( v, m ).replace( /^\-+|-\-+$/g, '' );
 }
 
 // Auto-adjust textarea height
@@ -407,7 +415,7 @@ function changeUrl( u, t, d ) {
 }
 
 function previewUploads( box, files ) {
-	
+	// TODO: Preview files to be uploaded
 }
 
 function cleanDrop( box, sign ) {
@@ -464,6 +472,7 @@ function canDrop( box, opts ) {
 		e.preventDefault();
 		if ( wf ) {
 			previewUploads( this, e.dataTransfer.files );
+			// TODO: Send to given URL
 		}
 	}, false );
 }
@@ -483,8 +492,14 @@ function makeResizable( box ) {
 }
 
 // Tie title and slug input fields
-function makeTitleSlug( s_box, t_name ) {
-	const t_box		= byId( t_name );
+function makeTitleSlug( s_box, params ) {
+	const opts		= getOptions( params );
+	if ( !opts.name ) {
+		return;
+	}
+	opts.max		= parseInt( opts.max || 180 );
+	
+	const t_box		= byId( opts.name );
 	s_box.slugchange	= true;
 	
 	// Slug has been manually edited
@@ -492,17 +507,21 @@ function makeTitleSlug( s_box, t_name ) {
 		s_box.slugchange = false;
 	}, false );
 	
-	listen( s_box, 'blur', function( e ) {
-		makeSlug( s_box, this.value );
-	}, false );
 	
-	// No title?
-	if ( !t_box ) { return; }
+	listen( s_box, 'blur', function( e ) {
+		if ( s_box.slugchange ) {
+			if ( !t_box ) { return; }
+			makeSlug( s_box, t_box.value, opts.max );
+		} else {
+			makeSlug( s_box, this.value, opts.max );
+		}
+	}, false );
 	
 	// Title-to-slug change (if slug hasn't already been changed)
 	listen( t_box, 'input, change', function( e ) {
 		if ( s_box.slugchange ) {
-			makeSlug( s_box, this.value );
+			if ( !t_box ) { return; }
+			makeSlug( s_box, t_box.value, opts.max );
 		}
 	}, false );
 }
