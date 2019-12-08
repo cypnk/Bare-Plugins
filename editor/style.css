@@ -25,12 +25,30 @@ body {
 }
 
 main {
-	max-width: 50rem;
-	margin: 2rem auto;
+	max-width: 44rem;
+	margin: 1rem auto;
 }
 
 main p + p {
 	margin-top: 1.5rem;
+}
+
+form {
+	padding: 0 1rem;
+	padding-bottom: 1rem;
+}
+
+.over .dropsign {
+	border: .5rem #78909C dashed;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 99vw;
+	height: 99vh;
+	transform: translate(-50%, -50%);
+	z-index: 99;
+	opacity: .5;
+	pointer-events: none;
 }
 
 form p {
@@ -69,7 +87,7 @@ form p label {
 	opacity: 1;
 }
 
-input, textarea {
+input, textarea, .btn {
 	border-bottom: .2rem solid #9E9E9E;
 }
 
@@ -77,22 +95,37 @@ input[type="text"], textarea {
 	padding: .5rem 0;
 }
 
-input[type="submit"] {
+input[type="submit"], .btn {
 	padding: .5rem 0;
 	cursor: pointer;
 	border-color: #0277BD;
+	transition: all 0.2s ease-out;
+}
+
+label.btn {
+	position: relative;
+	font: inherit;
+	transform: none;
+}
+
+.btn.upload {
+	border-color: #FF6F00;
 }
 
 input[type="submit"].draft {
 	border-color: #43A047;
 }
 
-input[type="submit"]:hover {
+input[type="submit"]:hover, .btn:hover {
 	border-color: #0D47A1;
 }
 
-input + input {
-	margin-left: 1rem;
+input[type="file"] {
+	display: none;
+}
+
+input + input, input + .btn, .btn + input {
+	margin-left: 2rem;
 }
 
 input:placeholder-shown + label, textarea:placeholder-shown + label {
@@ -125,7 +158,7 @@ input:required:valid ~ span.desc, textarea:required:valid ~ span.desc, input:opt
 }
 
 input:valid:not([type="submit"]):focus, textarea:valid:not([type="submit"]):focus {
-	border-color: #000;
+	border-color: #263238;
 }
 
 input:invalid, textarea:invalid {
@@ -139,3 +172,31 @@ input:invalid:focus, textarea:invalid:focus {
 input:invalid ~ span.desc, textarea:invalid ~ span.desc {
 	color: #F33;
 }
+
+progress {
+	height: .6rem;
+	-webkit-appearance: none;
+	-moz-appearence: none;
+	appearance: none;
+	opacity: 1;
+	transition: all 0.2s ease-out;
+}
+
+form.anim progress {
+	margin: 1rem 0 0 0;
+	display: block;
+	width: 100%;
+}
+
+progress::-webkit-progress-bar {
+	background: #78909C;
+}
+
+progress::-moz-progress-bar {
+	background: #78909C;
+}
+
+progress:not([value]), progress[value="0"] {
+	opacity: 0;
+}
+
