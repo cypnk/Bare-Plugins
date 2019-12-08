@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Login test</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<nav class="links">
+	<ul>
+		<li><a href="/">Home</a></li>
+	</ul>
+</nav>
+</header>
+<main>
+<form class="anim" action="/login" method="post"
+	enctype="application/x-www-form-urlencoded">
+	<input type="hidden" name="token" value="">
+	<input type="hidden" name="nonce" value="">
+	<p>
+		<input type="text" id="username" placeholder="Username" 
+			pattern=".{4,}" aria-describedby="user-desc" 
+			required>
+		<label for="username">Username:</label>
+		<span  id="user-desc" data-validation=". 4 Or more charcters."
+			class="desc">Login name is required</span>
+	</p>
+	<p>
+		<input type="password" id="password" placeholder="Password" 
+			pattern=".{4,}" aria-describedby="pass-desc" 
+			required>
+		<label for="password">Password:</label>
+		<span  id="pass-desc" data-validation=". 4 Or more charcters."
+			class="desc">Login password is required</span>
+	</p>
+	<p>
+		<input type="submit" value="Login" />
+	</p>
+</form>
+</main>
+<script type="text/javascript" src="editor.js"></script>
+</body>
+</html>
