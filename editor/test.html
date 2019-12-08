@@ -5,14 +5,18 @@
 <title>Editor test</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-feature="droppable:prog=bdrop&prev=filepreview&sign=dropsign&limit=20url=/">
 <main>
-<form class="anim">
+<form class="anim" method="post" 
+	enctype="multipart/form-data">
+	<input type="hidden" name="token" value="">
+	<input type="hidden" name="nonce" value="">
+	<progress id="bdrop" value="0" max="100"></progress>
 	<p>
 		<input type="text" id="title" placeholder="Title" 
 			pattern=".{4,}" aria-describedby="title-desc" 
 			required>
-		<label for="title">Title</label>
+		<label for="title">Title:</label>
 		<span  id="title-desc" data-validation=". 4 Or more charcters."
 			class="desc">A title is required</span>
 	</p>
@@ -20,14 +24,14 @@
 		<textarea id="body" rows="1" cols="50" placeholder="Body" 
 			data-feature="autoheight" aria-describedby="body-desc" 
 			required></textarea>
-		<label for="body">Body</label>
+		<label for="body">Body:</label>
 		<span  id="body-desc" class="desc">Post body is required</span>
 	</p>
 	<p>
 		<input type="text" id="slug" placeholder="Slug" 
 			pattern=".{4,}" data-feature="slug:title" 
 			aria-describedby="slug-desc">
-		<label for="slug">Slug</label>
+		<label for="slug">Slug:</label>
 		<span  id="slug-desc" data-validation=". 4 Or more charcters." 
 			class="desc">Will be auto-generated if blank</span>
 	</p>
@@ -35,15 +39,18 @@
 		<input type="text" id="tags" placeholder="Tags"
 			pattern=".{0}|.{3,}" data-feature="tags:max=20" 
 			aria-describedby="tag-desc">
-		<label for="tags">Tags</label>
+		<label for="tags">Tags:</label>
 		<span id="tag-desc" class="desc" 
 			data-validation=". 3 Characters per tag.">Optional</span>
 	</p>
 	<p>
-		<input type="submit" value="Post" /> 
-		<input type="submit" value="Save draft" class="draft" />
+		<input type="submit" name="post" value="Post" /> 
+		<input type="submit" name="draft" value="Save draft" 
+			class="draft" />
+		<label for="upload" class="btn upload">Upload</label>
 	</p>
 </form>
+<div id="filepreview" class="preview"></div>
 </main>
 <script type="text/javascript" src="editor.js"></script>
 </body>
