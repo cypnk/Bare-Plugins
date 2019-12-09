@@ -168,7 +168,7 @@ HTML
 
 // HTML Ending component
 define( 'TPL_PAGE_BODY',	<<<HTML
-<body class="{body_classes}">
+<body class="{body_classes}" {extra}>
 {body_before}
 {body}
 {body_after}
@@ -191,7 +191,7 @@ define( 'TPL_FULL_PAGE',	<<<HTML
 {stylesheets}
 {meta_tags}
 </head>
-<body class="{body_classes}">
+<body class="{body_classes}" {extra}>
 {body_before}
 {body}
 {body_after}
@@ -404,7 +404,7 @@ define( 'TPL_INPUT_SELECT',<<<HTML
 <select id="{id}" name="{name}" aria-describedby="{id}-desc"
 	class="{input_classes}" {extra}>
 	<option value=""> - </option>{options}</select>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -414,7 +414,7 @@ define( 'TPL_INPUT_TEXT',	<<<HTML
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
 	class="{input_classes}" value="{value}" {extra}>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -425,7 +425,7 @@ define( 'TPL_INPUT_SEARCH',	<<<HTML
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="search" aria-describedby="{id}-desc"
 	class="{input_classes}" value="{value}" {extra}>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -436,7 +436,7 @@ define( 'TPL_INPUT_DATETIME',	<<<HTML
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="datetime-local" aria-describedby="{id}-desc"
 	class="{input_classes}" value="{value}" {extra}>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -447,7 +447,7 @@ define( 'TPL_INPUT_EMAIL',<<<HTML
 	<span class="{special_classes">{special}</span></label>
 <input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
 	class="{input_classes}" value="{value}" {extra}>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -458,7 +458,7 @@ define( 'TPL_INPUT_PASS',	<<<HTML
 	<span class="{special_classes}">{special}</span></label> 
 <input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
 	class="{input_classes}" {extra}>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -469,7 +469,7 @@ define( 'TPL_INPUT_MULTILINE',	<<<HTML
 	<span class="{special_classes}">{special}</span></label> 
 <textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
 	class="{input_classes}" {extra}>{value}</textarea>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -479,7 +479,7 @@ define( 'TPL_INPUT_CHECKBOX',	<<<HTML
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" value="{value}" type="checkbox"
 		class="{input_classes}" aria-describedby="{id}-desc">
-	<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -494,7 +494,7 @@ define( 'TPL_INPUT_TEXT_SE',	<<<HTML
 	class="{input_classes}" value="{value}" {extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -505,7 +505,7 @@ define( 'TPL_INPUT_PASS_SE',	<<<HTML
 	class="{input_classes}" {extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -516,7 +516,7 @@ define( 'TPL_INPUT_EMAIL_SE',<<<HTML
 	class="{input_classes}" value="{value}" {extra}>
 <label for="{id}" class="f6 b db mb2">{label} 
 	<span class="{special_classes">{special}</span></label>
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
@@ -528,25 +528,25 @@ define( 'TPL_INPUT_MULTILINE_SE',	<<<HTML
 	class="{input_classes}" {extra}>{value}</textarea>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
-<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
 
 // Post button
 define( 'TPL_INPUT_SUBMIT',
-	'<input type="submit" id="{id}" name="{name}" value="{value}" class="{submit_classes}">' );
+	'<input type="submit" id="{id}" name="{name}" value="{value}" class="{submit_classes}" {extra}>' );
 
 // Alternate submit (E.G. Save draft, search)
 define( 'TPL_INPUT_SUBMIT_ALT',	
-	'<input type="submit" id="{id}" name="{name}" value="{value}" class="{alt_classes}">' );
+	'<input type="submit" id="{id}" name="{name}" value="{value}" class="{alt_classes}" {extra}>' );
 
 // Critical submit (E.G. Delete)
 define( 'TPL_INPUT_SUBMIT_WARN', 
-	'<input type="submit" name="{name}" value="{value}" class="{warn_classes}" {extras}>' );
+	'<input type="submit" name="{name}" value="{value}" class="{warn_classes}" {extra}>' );
 
 // Action submit (E.G. Sort)
 define( 'TPL_INPUT_SUBMIT_ACTION', 
-	'<input type="submit" name="{name}" value="{value}" class="{action_classes}" {extras}>' );
+	'<input type="submit" name="{name}" value="{value}" class="{action_classes}" {extra}>' );
 
 // Generic block input form
 define( 'TPL_FORM_BLOCK',	<<<HTML
