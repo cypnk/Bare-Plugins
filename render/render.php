@@ -458,7 +458,7 @@ define( 'TPL_INPUT_PASS',	<<<HTML
 	<span class="{special_classes}">{special}</span></label> 
 <input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
 	class="{input_classes}" {extra}>
-<small id="{id}-desc" class="f7-l f6 black-60 db">{desc}</small>
+<small id="{id}-desc" class="{desc_classes}">{desc}</small>
 HTML
 );
 
@@ -480,6 +480,55 @@ define( 'TPL_INPUT_CHECKBOX',	<<<HTML
 <input id="{id}" name="{name}" value="{value}" type="checkbox"
 		class="{input_classes}" aria-describedby="{id}-desc">
 	<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+HTML
+);
+
+
+/**
+ *  Special inputs with label after input field
+ */
+
+// Text field input
+define( 'TPL_INPUT_TEXT_SE',	<<<HTML
+<input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
+	class="{input_classes}" value="{value}" {extra}>
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label>
+<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+HTML
+);
+
+
+// Password field input
+define( 'TPL_INPUT_PASS_SE',	<<<HTML
+<input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
+	class="{input_classes}" {extra}>
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label> 
+<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+HTML
+);
+
+
+// Email field input
+define( 'TPL_INPUT_EMAIL_SE',<<<HTML
+<input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
+	class="{input_classes}" value="{value}" {extra}>
+<label for="{id}" class="f6 b db mb2">{label} 
+	<span class="{special_classes">{special}</span></label>
+<small id="{id}-desc" class="{desc_classes}">{desc}</small>
+HTML
+);
+
+
+
+// Multiline text block content input
+define( 'TPL_INPUT_MULTILINE_SE',	<<<HTML
+<textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
+	class="{input_classes}" {extra}>{value}</textarea>
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label> 
+<small id="{id}-desc" class="{desc_classes}">{desc}</small>
 HTML
 );
 
