@@ -484,6 +484,26 @@ HTML
 );
 
 
+// Upload input
+define( 'TPL_INPUT_UPLOAD',	<<<HTML
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label>
+<input id="{id}" name="{name}" type="file" class="{input_classes}" 
+	aria-describedby="{id}-desc" {extra}>
+	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+HTML
+);
+
+// Upload input no description
+define( 'TPL_INPUT_UPLOAD_ND',	<<<HTML
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label>
+<input id="{id}" name="{name}" type="file" class="{input_classes}" 
+	aria-describedby="{id}-desc" {extra}>
+HTML
+);
+
+
 /**
  *  Special inputs with label after input field
  */
@@ -520,8 +540,6 @@ define( 'TPL_INPUT_EMAIL_SE',<<<HTML
 HTML
 );
 
-
-
 // Multiline text block content input
 define( 'TPL_INPUT_MULTILINE_SE',	<<<HTML
 <textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
@@ -531,6 +549,27 @@ define( 'TPL_INPUT_MULTILINE_SE',	<<<HTML
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
 HTML
 );
+
+// Upload input
+define( 'TPL_INPUT_UPLOAD_SE',	<<<HTML
+<input id="{id}" name="{name}" type="file" class="{input_classes}" 
+	aria-describedby="{id}-desc" {extra}>
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label>
+	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+HTML
+);
+
+// Upload input no description
+define( 'TPL_INPUT_UPLOAD_ND_SE',	<<<HTML
+<input id="{id}" name="{name}" type="file" class="{input_classes}" 
+	aria-describedby="{id}-desc" {extra}>
+<label for="{id}" class="{label_classes}">{label} 
+	<span class="{special_classes}">{special}</span></label>
+HTML
+);
+
+
 
 // Post button
 define( 'TPL_INPUT_SUBMIT',
@@ -1443,7 +1482,8 @@ function renderNavLinks(
 /**
  *  Format template with classes, assets, and language parameters
  */
-function render( string $tpl ) {
+function render( string $tpl, array $segments = [] ) {
+	// Overridable segments
 	setRegion( [
 		'{lang}'		=> \LANGUAGE, 
 		
@@ -1451,9 +1491,11 @@ function render( string $tpl ) {
 		'{body_after}'		=> renderNavLinks( 'footer' ),
 		'{heading_after}'	=> 
 			renderNavLinks( 'header' ) . searchForm(), 
-		// Currently unused
-		'{body_before_lastjs}'	=> '',
-		'{body_after_lastjs}'	=> ''
+		
+		'{body_before_lastjs}'	=> 
+			$segments['{body_before_lastjs}'] ?? '',
+		'{body_after_lastjs}'	=> 
+			$segments['{body_after_lastjs}'] ?? ''
 	] );
 	$tpl	= \strtr( $tpl, setRegion() );
 	$tpl	= parseLang( renderRegions( $tpl ) );
