@@ -3,6 +3,14 @@
 
 (function() {
 
+// File drop template
+const 
+emptyTpl	= "empty.svg",
+dropPreviewTpl	= 
+"<figure><a href=\"{url}\"><img src=\"{preview}\" alt=\"{url}\"></a>" + 
+"<figcaption>{description}</figcaption>" + 
+"</figure>";
+
 /**
  *  Helpers
  */
@@ -127,6 +135,17 @@ function applyClasses( box, cl ) {
 	} );
 }
 
+// Selected text range
+function selection( el ) {
+	var s = 
+	{
+		'start'	: el.selectionStart,
+		'end'		: el.selectionEnd
+	};
+	s.range = el.value.substring( s.start, s.end ).trim();
+	return s;
+}
+
 // Update cursor position
 function updateLastPos( box ) {
 	box.last_start	= box.selectionStart;
@@ -134,6 +153,49 @@ function updateLastPos( box ) {
 	
 	// Check for selection info
 	checkSelect( box );
+}
+
+// Move cursor to position
+function moveTo( el, s, e ) {
+	el.selectionStart	= s;
+	el.selectionEnd		= e;
+	updateLastPos( el );
+}
+
+// Move cursor to end of string
+function moveEnd( el, txt ) {
+	var
+	s = selection( el ),
+	l = s.range + txt.length;
+	moveTo( el, l, l );
+}
+
+// Update global cursor position
+function updateLastPos( el ) {
+	attr( el, 'data-selectionStart', el.selectionStart );
+	attr( el, 'data-selectionEnd', el.selectionEnd );
+}
+
+// Insert character at cursor position
+function insertTxt( el, txt ) {
+	var
+	s = selection( el ),
+	l = s.start + txt.length;
+	
+	el.value = 
+		el.value.substring( 0, s.start ) + txt + 
+		el.value.substring( s.end, el.value.length );
+	
+	moveTo( el, l, l );
+}
+
+// Move cursor to last position and insert text
+function mvInsertTxt( el, txt ) {
+	if ( el.selectionStart || el.selectionStart == '0' ) {
+		//moveTo( el, el.lastStart || 0, el.lastEnd || 0 );
+		insertTxt( el, txt );
+	}
+	updateLastPos( el );
 }
 
 // Selected text range
@@ -147,6 +209,19 @@ function selection( box ) {
 					box.selectionEnd 
 				).trim()
 	};
+}
+
+// Template placeholder replacements
+function template( tpl, data ) {
+	for ( var key in data ) {
+		tpl	= 
+		tpl.replace( 
+			new RegExp( '{' + key + '}', 'g' ), 
+			data[key] 
+		);
+	}
+	
+	return tpl;
 }
 
 // Computed style with important properties
@@ -247,12 +322,12 @@ function uniqueWords( words, ch1, ch2, max ) {
 		.map( e => e.trim() )
 		.filter( e => /\S/.test( e ) )
 		.filter( e => function( v ) {
-			return 
+			return v.toLowerCase();
 		} );
 	
 	// Remove duplicates and use join character to combine words
 	return ar.filter( function( v, i, s ) {
-		return i === s.indexOf( v );
+		return i === s.indexOf( v.toLowerCase() );
 	} ).join( ch2 );
 }
 
@@ -266,8 +341,6 @@ function getClipboard( e ) {
 	}
 	return '';
 }
-
-
 
 
 /**
@@ -414,8 +487,20 @@ function changeUrl( u, t, d ) {
 	window.history.pushState( d, t, u );
 }
 
-function previewUploads( box, files ) {
+function previewUploads( box, opts, files ) {
+	if ( !files || files.length ) { return ; }
+	
+	var p	= byId( opts.prev );
+	if ( !p ) { return; }
+	var f	= byId( opts.form );
+	
+	var
+	total	= 0,
+	prog	= 0;
+	
 	// TODO: Preview files to be uploaded
+	
+	
 }
 
 function cleanDrop( box, sign ) {
@@ -471,8 +556,9 @@ function canDrop( box, opts ) {
 		e.stopPropagation();
 		e.preventDefault();
 		if ( wf ) {
-			previewUploads( this, e.dataTransfer.files );
-			// TODO: Send to given URL
+			previewUploads( 
+				this, opts, e.dataTransfer.files 
+			);
 		}
 	}, false );
 }
@@ -548,9 +634,13 @@ function makeDroppable( box, params ) {
 	opts.prog	= opts.prog	|| '';
 	opts.prev	= opts.prev	|| '';
 	opts.url	= opts.url	|| '';
+	opts.form	= opts.form	|| '';
+	opts.input	= opts.input	|| '';
 	opts.sign	= opts.sign	|| 'dropsign';
 	opts.limit	= opts.limit	|| 20;
 	
+	if ( opts.input ) {
+	}
 	canDrop( box, opts );
 }
 
