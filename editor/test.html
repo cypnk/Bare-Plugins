@@ -47,7 +47,15 @@
 			aria-describedby="tag-desc">
 		<label for="tags">Tags:</label>
 		<span id="tag-desc" class="desc" 
-			data-validation=". At least 3 characters">Optional</span>
+			data-validation=". At least 3 characters">Optional, Comma separated</span>
+	</p>
+	<p>
+		<input type="text" id="pub" placeholder="Publish" 
+			pattern=".{2,}" 
+			aria-describedby="pub-desc">
+		<label for="pub">Publish:</label>
+		<span  id="pub-desc" data-validation=". 2 Or more charcters." 
+			class="desc">Optional, E.G. "+1 days" or "+2 weeks"</span>
 	</p>
 	<p>
 		<input type="submit" name="post" value="Post" /> 
