@@ -15,12 +15,12 @@ html, body {
 }
 
 html {
-	background: #EEE;
+	background: #FAF7F2;
 }
 
 body {
 	font: 400 1rem sans-serif;
-	color: #424242;
+	color: #444;
 	padding: 1rem 0;
 	line-height: 1.5rem;
 }
@@ -105,6 +105,45 @@ form {
 .over .dropsign:after {
 	content: '\2795';
 	font-size: 6rem;
+	font-weight: 600;
+}
+
+.posts ul {
+	margin: 1rem;
+}
+
+.posts ul li ul {
+	margin: 0 1rem;
+}
+
+ul.index {
+	list-style: none;
+}
+
+ul.index li + li {
+	margin-top: 1rem;
+}
+
+ul.index li span.info {
+	display: block;
+	font-size: 80%;
+}
+
+ul.index li > a {
+	color: #755;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+span.info {
+	font-style: italic;
+}
+
+ul.index + form, nav + form {
+	margin-top: 2rem;
+}
+
+form legend {
 	font-weight: 600;
 }
 
@@ -280,7 +319,13 @@ figure img {
 	color: #444;
 }
 
+::selection {
+	background: #E7DECA;
+	color: #7B6737;
+}
+
 @media screen and (max-width: 50rem) { 
+	body { padding: 1rem; }
 	.preview { grid-template-columns: 1fr 1fr; }
 }
 
