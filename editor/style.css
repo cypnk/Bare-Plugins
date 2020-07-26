@@ -10,6 +10,10 @@
 	box-sizing: border-box;
 }
 
+html, body, main, header, aside, nav {
+	display: block;
+}
+
 html, body {
 	height: 100%;
 }
@@ -23,6 +27,51 @@ body {
 	color: #444;
 	padding: 1rem 0;
 	line-height: 1.5rem;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr;
+	grid-template-areas: 
+		"header header header header" 
+		"aside main main main" 
+		"footer footer footer footer";
+	
+	max-width: 60rem;
+	justify-items: stretch;
+	align-items: start;
+	margin: 1rem auto;
+}
+
+header.main {
+	grid-area: header;
+}
+
+main.main {
+	grid-area: main;
+}
+
+aside.main {
+	grid-area: aside;
+	font-size: 85%;
+}
+
+footer.main {
+	grid-area: footer;
+}
+
+main, header nav {
+	
+}
+
+
+strong, b {
+	font-weight: 600;
+}
+
+em, i {
+	font-style: italic;
+}
+
+u {
+	text-decoration: underline;
 }
 
 nav ul {
@@ -41,7 +90,7 @@ nav ul li a {
 
 nav {
 	font-size: 85%;
-	color: #263238;
+	color: #444;
 }
 
 nav ul li + li:before {
@@ -67,15 +116,6 @@ nav.path ul li a {
 	color: #0277BD;
 }
 
-main, header nav {
-	max-width: 44rem;
-	margin: 0 auto;
-}
-
-main {
-	margin-bottom: 2rem;
-}
-
 main p + p {
 	margin-top: 1.5rem;
 }
@@ -84,6 +124,50 @@ form {
 	margin-top: 1rem;
 	padding: 0;
 	padding-bottom: 1rem;
+}
+
+details summary {
+	cursor: pointer;
+}
+
+/* Tree */
+aside.main details {
+	margin-top: 1rem;
+}
+aside.main details summary {
+	font-weight: 600;
+	color: #78909C;
+}
+
+aside.main details[open] > summary {
+	color: #444;
+}
+aside.main ul {
+	list-style: none;
+}
+
+aside.main ul li + li {
+}
+
+aside.main ul li ul li {
+	margin-left: 1rem;
+}
+
+aside.main ul li a {
+	font-weight: 600;
+}
+
+aside.main nav:before { 
+	content: '[ ';
+}
+
+aside.main nav:after { 
+	content: ' ]';
+}
+
+aside.main nav a {
+	font-weight: 400;
+	text-decoration: none;
 }
 
 .over .dropsign {
