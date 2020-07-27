@@ -1006,7 +1006,7 @@ function fw_checkReferer( $ref ) {
 }
 
 function fw_headerCheck() {
-	$val = getHeaders( true );
+	$val = httpHeaders( true );
 	
 	if ( 
 		// Must not be used
@@ -1016,11 +1016,6 @@ function fw_headerCheck() {
 		// Suspect request headers
 		\array_key_exists( 'x-aaaaaaaaaa', $val )
 	) {
-		return true;
-	}
-	
-	// Fail, if "referrer" correctly spelled
-	if ( \array_key_exists( 'referer', $val ) ) {
 		return true;
 	}
 	
@@ -1085,13 +1080,8 @@ function fw_sanityCheck() {
 		return true;
 	}
 	
-	// 'HTTP/' without space Should always be in the protocol
-	if ( !fw_has( $pr, 'HTTP/' ) ) {
-		return true;
-	}
-	
 	// Suspicious UA lengths ("Mozilla/5." alone is 10 characters)
-	$ual	= strlen( $ua );
+	$ual	= strsize( $ua );
 	if ( $ual < 10 || $ual > 300 ) {
 		return true;
 	}
@@ -1122,7 +1112,7 @@ function fw_insertLog() {
 		':ua'		=> getUA(), 
 		':uri'		=> getQS(), 
 		':method'	=> getMethod(), 
-		':headers'	=> \implode( "\n", getHeaders() )
+		':headers'	=> \implode( "\n", httpHeaders() )
 	] );
 }
 
