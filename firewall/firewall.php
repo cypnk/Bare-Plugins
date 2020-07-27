@@ -1110,7 +1110,7 @@ function fw_insertLog() {
 	$stm->execute( [
 		':ip'		=> getIP(), 
 		':ua'		=> getUA(), 
-		':uri'		=> getQS(), 
+		':uri'		=> getQS() . "\n" . $_SERVER['REQUEST_URI'], 
 		':method'	=> getMethod(), 
 		':headers'	=> \implode( "\n", httpHeaders() )
 	] );
