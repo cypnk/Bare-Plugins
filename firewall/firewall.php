@@ -6,7 +6,11 @@ if ( !defined( 'PATH' ) ) { die(); }
  *  
  *  @link https://github.com/cypnk/Firewall
  *  
- *  This plugin should be added first to ensure it runs before all others
+ *  This plugin should be added first to ensure it runs before all others. 
+ *  A lot of this was inspired by the Bad Behavior package but does not
+ *  use the same code.
+ *  
+ *  @link http://bad-behavior.ioerror.us
  */
 
 
