@@ -1023,10 +1023,15 @@ function fw_headerCheck() {
 		return true;
 	}
 	
-	// Should not be empty, if set, and must contain a colon (:)
+	// Fail, if "referrer" correctly spelled
 	if ( \array_key_exists( 'referrer', $val ) ) {
-		$ref	= $val['referrer'] ?? '';
-		if ( empty( $val['referrer'] ) ) {
+		return true;
+	}
+	
+	// Should not be empty, if set, and must contain a colon (:)
+	if ( \array_key_exists( 'referer', $val ) ) {
+		$ref	= $val['referer'] ?? '';
+		if ( empty( $ref ) ) {
 			return true;
 		}
 		if ( !textHas( $ref, ':' ) ) {
@@ -1076,7 +1081,7 @@ function fw_sanityCheck() {
 	}
 	
 	// None of these should be empty
-	$pr	= getProtocol();
+	$pr	= trim( $_SERVER['SERVER_PROTOCOL'] ?? '' );
 	$ua	= getUA();
 	$mt	= getMethod();
 	
