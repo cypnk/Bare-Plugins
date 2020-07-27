@@ -194,6 +194,7 @@ function fw_uaCheck() {
 		'<?=`$_',
 		'IDATH.c??<script',
 		'IDATHKc??<script',
+		'{ :; }',
 		
 		// There's no space in front of ;
 		' ; MSIE',
@@ -553,6 +554,7 @@ function fw_uaCheck() {
 		'Nutscrape',
 		'NextGen',
 		'Octopus',
+		'okhttp/',
 		'OmniExplorer',
 		'Opera/9.64(',
 		
@@ -771,6 +773,7 @@ function fw_uriCheck() {
 		'..\\',
 		'..%2F',
 		'..%u2216',
+		'\/\/\/',
 		
 		// Attempt to reveal PHP version
 		'?=PHP',
@@ -784,7 +787,14 @@ function fw_uriCheck() {
 		'#',
 		
 		// Potential vulnerability scan
+		'.^M.',
 		'.git/',
+		'.ssh/',
+		'/.bash_',
+		'/.bashrc',
+		'/.zsh_',
+		'/.zshrc',
+		'/.vimrc',
 		'%7e',
 		'<?=`$_',
 		'<?php',
