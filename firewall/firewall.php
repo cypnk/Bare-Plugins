@@ -988,7 +988,7 @@ function fw_checkReferer( $ref ) {
 	}
 	
 	// These shouldn't have referer
-	if ( !in_array( 
+	if ( in_array( 
 		$verb, 
 		[ 'put', 'delete', 'patch', 'options', 'head' ] 
 	) ) {
@@ -1020,11 +1020,6 @@ function fw_headerCheck() {
 		// Suspect request headers
 		\array_key_exists( 'x-aaaaaaaaaa', $val )
 	) {
-		return true;
-	}
-	
-	// Fail, if "referrer" correctly spelled
-	if ( \array_key_exists( 'referrer', $val ) ) {
 		return true;
 	}
 	
