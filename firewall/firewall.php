@@ -1128,7 +1128,7 @@ function fw_start() {
 		fw_uaCheck()		|| 
 		fw_headerCheck()
 	) {
-		fw_insertLog();
+		shutdown( 'fw_insertLog' );
 		
 		// Send kill
 		fw_instaKill();
