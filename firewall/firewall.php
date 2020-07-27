@@ -983,7 +983,7 @@ function fw_checkReferer( $ref ) {
 	$srv	= $_SERVER['SERVER_NAME'] ?? '';
 	$verb	= getMethod();
 	
-	if ( !SKIP_LOCAL && empty( $srv ) && $verb != 'get' ) {
+	if ( empty( $srv ) && $verb != 'get' ) {
 		return true;
 	}
 	
