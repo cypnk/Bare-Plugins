@@ -22,6 +22,10 @@ define( 'FIREWALL_DATA',		CACHE . 'firewall.db' );
 // (this may block legitimate traffic)
 define( 'FIREWALL_IP_BOTS',		0 );
 
+// Whitelist of HTTP methods (these fall through to be handled by Bare)
+define( 'FIREWALL_METHODS', 
+	'get, post, head, connect, options, patch, delete, put' );
+
 
 /**********************************************************************
  *                      Caution editing below
@@ -1250,22 +1254,8 @@ function fw_sanityCheck() {
 		return true;
 	}
 	
-	// Allowed HTTP methods
-	switch( $mt ) {
-		case 'get':
-		case 'post':
-		case 'head':
-		case 'connect':
-		case 'options':
-		case 'patch':
-		case 'delete':
-		case 'put':
-			return false;
-		
-		// Unrecognized method (E.G TRACE can be exploited)
-		default:
-			return true;
-	}
+	// Check if not in allowed HTTP methods
+	return !\in_array( $mt, trimmedList( \FIREWALL_METHODS ) );
 }
 
 function fw_insertLog() {
