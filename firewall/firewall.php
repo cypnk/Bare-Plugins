@@ -18,6 +18,9 @@ if ( !defined( 'PATH' ) ) { die(); }
 // This will be where Firewall creates a SQLite database
 define( 'FIREWALL_DATA',		CACHE . 'firewall.db' );
 
+// Firewall search engines based on IP address 
+// (this may block legitimate traffic)
+define( 'FIREWALL_IP_BOTS',		0 );
 
 
 /**********************************************************************
@@ -931,6 +934,141 @@ function fw_browserCompat( $ua ) {
 	return false;
 }
 
+// Bot ip checking
+function fw_botCheck() {
+	$ip	= getIP();
+	
+	// Invalid IP?
+	if ( empty( $ip ) ) {
+		return true;
+	}
+	
+	// Ideally, should be blocked at the router
+	static $never	=  [
+		"0.0.0.0/8",
+		"169.254.0.0/16",
+		"172.16.0.0/12", 
+		"192.0.2.0/24",
+		"198.18.0.0/15",
+		"203.0.113.0/24",
+		"224.0.0.0/4",
+		"240.0.0.0/4",
+	];
+	
+	// Local IP (testing or tor)
+	static $localip = [
+		"10.0.0.0/8", 
+		"127.0.0.0/8",
+		"192.168.0.0/16"
+	];
+	
+	// Known search engine ranges
+	static $google	= [
+		"66.249.64.0/19", 
+		"64.233.160.0/19", 
+		"72.14.192.0/18", 
+		"203.208.32.0/19", 
+		"74.125.0.0/16", 
+		"216.239.32.0/19", 
+		"209.85.128.0/17"
+	];
+	
+	static $msn	= [
+		"207.46.0.0/16", 
+		"65.52.0.0/14", 
+		"207.68.128.0/18", 
+		"207.68.192.0/20", 
+		"64.4.0.0/18", 
+		"157.54.0.0/15", 
+		"157.60.0.0/16", 
+		"157.56.0.0/14", 
+		"131.253.21.0/24", 
+		"131.253.22.0/23", 
+		"131.253.24.0/21", 
+		"131.253.32.0/20", 
+		"40.76.0.0/14"
+	];
+	
+	static $yahoo	= [
+		"202.160.176.0/20", 
+		"67.195.0.0/16", 
+		"203.209.252.0/24", 
+		"72.30.0.0/16", 
+		"98.136.0.0/14", 
+		"74.6.0.0/16"
+	];
+	
+	static $baidu	= [
+		"119.63.192.0/21",
+		"123.125.71.0/24",
+		"180.76.0.0/16",
+		"220.181.0.0/16"
+	];
+	
+	// Martians
+	if ( fw_inSubnet( $ip, $never ) ) {
+		return true;
+	}
+	
+	// Reserved range?
+	$skip	= ( bool ) config( 'skip_local', \SKIP_LOCAL, 'int' );
+	if ( !$skip ) {
+		if ( fw_inSubnet( $ip, $localip ) ) {
+			return true;
+		}
+	}
+	
+	// Continue checking?
+	$fws	= ( bool ) config( 'firewall_ip_bots', \FIREWALL_IP_BOTS, 'int' );
+	if ( !$fws ) {
+		return false;
+	}
+	
+	$ua = getUA();
+	
+	/**
+	 *  Search engine checks
+	 */
+	// Googlebots
+	if ( textNeedleSearch( $ua, [ 
+		'Googlebot', 
+		'Google Web Preview', 
+		'Mediapartners-Google' 
+	] ) ) {
+		if ( !fw_inSubnet( $ip, $google ) ) {
+			return true;
+		}
+	
+	// Baidu bot
+	} elseif ( textNeedleSearch( $ua, [ 'baidu' ] ) ) {
+		if ( !fw_inSubnet( $ip, $baidu ) ) {
+			return true;
+		}
+	
+	// Bingbot
+	} elseif ( textNeedleSearch( $ua, [ 
+		'bingbot', 
+		'msnbot', 
+		'MS Search' 
+	] ) ) {
+		if ( !fw_inSubnet( $ip, $msn ) ) {
+			return true;
+		}
+	
+	// Yahoo! bot
+	} elseif ( textNeedleSearch( $ua, [ 
+		'Yahoo! SearchMonkey', 
+		'Yahoo! Slurp' 
+	] ) ) {
+		if ( !fw_inSubnet( $ip, $yahoo ) ) {
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+
 // Closer evaluation
 function fw_browserCheck( $ua, $val ) {
 	// Browsers should send Accept
@@ -1144,6 +1282,7 @@ function fw_start() {
 	if (
 		fw_sanityCheck()	|| 
 		fw_uriCheck()		|| 
+		fw_botCheck()		|| 
 		fw_uaCheck()		|| 
 		fw_headerCheck()
 	) {
