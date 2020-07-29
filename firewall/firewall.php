@@ -71,6 +71,8 @@ SQL
 
 // End response immediately
 function fw_instaKill() {
+	shutdown( 'fw_insertLog' );
+	
 	// Log error as a firewall entry
 	visitorError( 403, 'Firewall' );
 	sendError( 403, errorLang( "denied", \MSG_DENIED ) );
@@ -1228,6 +1230,7 @@ function fw_headerCheck() {
 function fw_sanityCheck() {
 	// Empty host?
 	if ( empty( getHost() ) ) {
+		shutdown( 'fw_insertLog' );
 		visitorError( 400, 'Firewall Host' );
 		sendError( 400, errorLang( "invalid", \MSG_INVALID ) );
 	}
@@ -1278,18 +1281,23 @@ function fw_insertLog() {
 }
 
 function fw_start() {
+	// Filters
+	static $filters = [ 
+		'fw_sanityCheck', 
+		'fw_uriCheck', 
+		'fw_uaCheck', 
+		'fw_headerCheck', 
+		'fw_botCheck'
+	];
+	
 	// Fresh request
-	if (
-		fw_sanityCheck()	|| 
-		fw_uriCheck()		|| 
-		fw_botCheck()		|| 
-		fw_uaCheck()		|| 
-		fw_headerCheck()
-	) {
-		shutdown( 'fw_insertLog' );
-		
-		// Send kill
-		fw_instaKill();
+	foreach ( $filters as $f ) {
+		if ( $f() ) {
+			fw_instaKill();
+			
+			// Fallback
+			break;
+		}
 	}
 }
 
