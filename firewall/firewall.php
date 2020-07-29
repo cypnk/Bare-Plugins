@@ -795,6 +795,9 @@ function fw_uriCheck() {
 		// Shouldn't see fragments in the URI sent to the server
 		'#',
 		
+		// Acme-client should never get as far as PHP
+		'/.well-known/',
+		
 		// Potential vulnerability scan
 		'.^M.',
 		'.git/',
@@ -1170,6 +1173,20 @@ function fw_checkReferer( $ref ) {
 function fw_headerCheck() {
 	$val = httpHeaders( true );
 	
+	// Contradicting or empty connections
+	$cn	= $val['connection'] ?? '';
+	if ( empty( $cn ) || ( 
+		textHas( $cn, 'Keep-Alive' ) && 
+		textHas( $cn, 'Close' ) 
+	) ) {
+		return true;
+	}
+	
+	// Fail, if "referrer" correctly spelled
+	if ( \array_key_exists( 'referrer', $val ) ) {
+		return true;
+	}
+	
 	if ( 
 		// Must not be used
 		\array_key_exists( 'proxy-connection', $val )	|| 
@@ -1178,11 +1195,6 @@ function fw_headerCheck() {
 		// Suspect request headers
 		\array_key_exists( 'x-aaaaaaaaaa', $val )
 	) {
-		return true;
-	}
-	
-	// Fail, if "referrer" correctly spelled
-	if ( \array_key_exists( 'referrer', $val ) ) {
 		return true;
 	}
 	
@@ -1199,15 +1211,6 @@ function fw_headerCheck() {
 		if ( fw_checkReferer( $ref ) ) {
 			return true;
 		}
-	}
-	
-	// Contradicting or empty connections
-	$cn	= $val['connection'] ?? '';
-	if ( ( 
-		textHas( $cn, 'Keep-Alive' ) && 
-		textHas( $cn, 'Close' ) 
-	) || empty( $cn ) ) {
-		return true;
 	}
 	
 	// Repeated words in connection? E.G. "close, close"
