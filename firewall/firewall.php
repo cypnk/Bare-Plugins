@@ -37,6 +37,7 @@ define( 'FIREWALL_METHODS',
 define( 'FIREWALL_SQL', <<<SQL
 CREATE TABLE firewall (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+	reason TEXT NOT NULL,
 	ip TEXT NOT NULL, 
 	ua TEXT NOT NULL, 
 	uri TEXT NOT NULL, 
@@ -45,6 +46,7 @@ CREATE TABLE firewall (
 	expires DATETIME DEFAULT NULL,
 	created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );-- --
+CREATE INDEX idx_firewall_on_reason ON firewall ( reason );-- --
 CREATE INDEX idx_firewall_on_ip ON firewall ( ip ASC );-- --
 CREATE INDEX idx_firewall_on_ua ON firewall ( ua ASC );-- --
 CREATE INDEX idx_firewall_on_uri ON firewall ( uri ASC );-- --
@@ -67,18 +69,19 @@ SQL
 );
 
 define( 'FIREWALL_DB_INSERT', <<<SQL
-INSERT INTO firewall ( ip, ua, uri, method, headers ) 
-	VALUES ( :ip, :ua, :uri, :method, :headers );
+INSERT INTO firewall ( reason, ip, ua, uri, method, headers ) 
+	VALUES ( :reason, :ip, :ua, :uri, :method, :headers );
 SQL
 );
 
 
 // End response immediately
-function fw_instaKill() {
-	shutdown( 'fw_insertLog' );
+function fw_instaKill( string $reason ) {
+	$fw = trim( 'Firewall ' . $reason );
+	shutdown( 'fw_insertLog', $fw );
 	
 	// Log error as a firewall entry
-	visitorError( 403, 'Firewall' );
+	visitorError( 403, $fw );
 	sendError( 403, errorLang( "denied", \MSG_DENIED ) );
 }
 
@@ -1258,13 +1261,14 @@ function fw_sanityCheck() {
 	}
 	
 	// Check if not in allowed HTTP methods
-	return !\in_array( $mt, trimmedList( \FIREWALL_METHODS ) );
+	return !\in_array( $mt, trimmedList( \FIREWALL_METHODS, true ) );
 }
 
-function fw_insertLog() {
+function fw_insertLog( string $reason = '' ) {
 	$db	= getDb( \FIREWALL_DATA );
 	$stm	= $db->prepare( \FIREWALL_DB_INSERT );
 	$stm->execute( [
+		':reason'	=> empty( $reason ) ? 'Unknown' : $reason,
 		':ip'		=> getIP(), 
 		':ua'		=> getUA(), 
 		':uri'		=> $_SERVER['REQUEST_URI'], 
@@ -1286,7 +1290,7 @@ function fw_start() {
 	// Fresh request
 	foreach ( $filters as $f ) {
 		if ( $f() ) {
-			fw_instaKill();
+			fw_instaKill( $f );
 			
 			// Fallback
 			break;
