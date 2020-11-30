@@ -26,7 +26,7 @@ define( 'CAPTCHA_HASH',		'tiger160,4' );
 
 // Captcha field render template
 $templates['tpl_captcha']	= <<<HTML
-	<input type="hidden" name="capA">
+	<input type="hidden" name="capA" value="{capA}">
 	<input type="text" name="captcha" 
 		placeholder="{lang:forms:captcha:placeholder}" 
 		class="{input_classes}" required> 
@@ -208,6 +208,21 @@ function showCaptcha( string $event, array $hook, array $params ) {
 	}
 	
 	captcha( $_SESSION[$capB] );
+}
+
+/**
+ *  Render captcha input form
+ */
+function renderCaptcha() : string {
+	$c = genCaptcha();
+	$p = 
+	'/' . cutSlug( eventRoutePrefix( 'showcaptcha', 'captcha' ) ) . '/';
+	
+	return 
+	render( template( 'tpl_input_xsrf' ), [
+		'capA'		=> $c[0],
+		'captcha'	=> homeLink() . $p . $c[1]
+	] );
 }
 
 /**
