@@ -7,4 +7,4 @@ These are still under development and may contain bugs.
 
 The following plugins are ready to install:
 - [firewall](https://github.com/cypnk/Bare-Plugins/tree/master/firewall): A simple speedbump plugin to reduce some malicious behavior
-- [templates](https://github.com/cypnk/Bare-Plugins/tree/master/firewall): Enables ovrriding the default templates with your own, entirely different, HTML
+- [templates](https://github.com/cypnk/Bare-Plugins/tree/master/templates): Enables ovrriding the default templates with your own, entirely different, HTML
