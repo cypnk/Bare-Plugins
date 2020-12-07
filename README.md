@@ -5,4 +5,6 @@ These are completely optional and Bare will function on its own.
 
 These are still under development and may contain bugs.
 
-The [firewall](https://github.com/cypnk/Bare-Plugins/tree/master/firewall) plugin is now ready to install.
+The following plugins are ready to install:
+- [firewall](https://github.com/cypnk/Bare-Plugins/tree/master/firewall): A simple speedbump plugin to reduce some malicious behavior
+- [templates](https://github.com/cypnk/Bare-Plugins/tree/master/firewall): Enables ovrriding the default templates with your own, entirely different, HTML
