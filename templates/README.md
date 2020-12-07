@@ -1,6 +1,6 @@
 # Bare Templates
 
-This is a simple handler which enables overriding all preset in [index.php](https://github.com/cypnk/Bare/blob/master/index.php).
+This is a simple handler which enables overriding all templates in [index.php](https://github.com/cypnk/Bare/blob/master/index.php).
 
 Simply create a file in the **files/** subfolder with the name of the template.  
 E.G. If overriding *tpl_full_page*, create **files/tpl_full_page.tpl** with your own.  
