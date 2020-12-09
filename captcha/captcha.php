@@ -61,6 +61,10 @@ function captcha( string $txt ) {
 	// Font file (not part of assets and isn't served to visitor directly)
 	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
 	$font	= \rtrim( \PLUGINS, '/' ) . '/captcha/' . $ffile; 
+	if ( empty( filterDir( $font, \PLUGINS ) ) ) {
+		logError( 'CAPTCHA: Invalid font file location' );
+		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+	}
 	if ( !file_exists( $font ) ) {
 		logError( 'CAPTCHA: Font file not found' );
 		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
@@ -215,11 +219,10 @@ function showCaptcha( string $event, array $hook, array $params ) {
  */
 function renderCaptcha() : string {
 	$c = genCaptcha();
-	$p = 
-	'/' . cutSlug( eventRoutePrefix( 'showcaptcha', 'captcha' ) ) . '/';
+	$p = cutSlug( eventRoutePrefix( 'showcaptcha', 'captcha' ) ) . '/';
 	
 	return 
-	render( template( 'tpl_input_xsrf' ), [
+	render( template( 'tpl_captcha' ), [
 		'capA'		=> $c[0],
 		'captcha'	=> homeLink() . $p . $c[1]
 	] );
