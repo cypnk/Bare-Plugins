@@ -1,7 +1,7 @@
 <?php declare( strict_types = 1 );
 if ( !defined( 'PATH' ) ) { die(); }
 /**
- *  Bare Templates: This plugin enables ovrriding the default templates with 
+ *  Bare Templates: This plugin enables overriding the default templates with 
  *  custom files stored in the TEMPLATES configuration location
  *  
  *  E.G. 
@@ -19,20 +19,20 @@ define( 'TEMPLATES',	PLUGINS . 'templates/files/' );
  */
 function loadTemplates( string $event, array $hook, array $params ) {
 	$tpl = config( 'templates', [] );
-	if ( empty( $tpl ) \!is_array( $tpl ) ) {
+	if ( empty( $tpl ) || \!is_array( $tpl ) ) {
 		return \array_merge( $hook, $params );
 	}
 	
 	$loaded	= [];
 	$err	= 'Error loading ';
 	foreach( $tpl as $t ) {
-		if ( !is_string( $t ) ) {
+		if ( !\is_string( $t ) ) {
 			continue;
 		}
 		
 		// Load new template file from cache folder
 		$fname = \TEMPLATES . $t . '.tpl';
-		if ( empty( filterDir( $fname, $root ) ) ) {
+		if ( empty( filterDir( $fname, \TEMPLATES ) ) ) {
 			// Invalid template location
 			errorLog( $err . $t );
 			continue;
