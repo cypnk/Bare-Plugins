@@ -26,6 +26,8 @@ define( 'FIREWALL_IP_BOTS',		0 );
 define( 'FIREWALL_METHODS', 
 	'get, post, head, connect, options, patch, delete, put' );
 
+// Enable/Disable firewall database logging
+define( 'FIREWALL_DB_LOG',		1 );
 
 /**********************************************************************
  *                      Caution editing below
@@ -1269,6 +1271,10 @@ function fw_sanityCheck() {
 }
 
 function fw_insertLog( string $reason = '' ) {
+	if ( !\FIREWALL_DB_LOG ) {
+		return;
+	}
+	
 	$db	= getDb( \FIREWALL_DATA );
 	$stm	= $db->prepare( \FIREWALL_DB_INSERT );
 	$stm->execute( [
