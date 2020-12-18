@@ -1,11 +1,10 @@
 <?php declare( strict_types = 1 );
 if ( !defined( 'PATH' ) ) { die(); }
 /**
- *  Bare Render: Templating and rendering plugin for Bare
- *  This plugin enables template customization, multi-lingual lables, 
- *  and form input rendering
+ *  Bare Render: This plugin enables additional template customization, 
+ *  multi-lingual lables, numeric pagination, and form input rendering
  *  
- *  This file hould be required first if any others depend on it
+ *  Add this plugin to 'plugins_enabled' before the templates plugin if using both
  */
 
 /**
@@ -113,98 +112,124 @@ HTML;
 
 // Select dropdown
 $templates['tpl_input_select']		= <<<HTML
+{input_before}{input_select_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
 <select id="{id}" name="{name}" aria-describedby="{id}-desc"
-	class="{input_classes}" {extra}>
-	<option value=""> - </option>{options}</select>
+	class="{input_classes}" {required}{extra}>
+	{unselect_option}{options}</select>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_input_after}{input_after}
+HTML;
+
+// Unselected dropdown option
+$templates['tpl_form_unselect']	=<<<HTML
+<option value="">--</option>
 HTML;
 
 // Text field input
 $templates['tpl_input_text']		= <<<HTML
+{input_before}{input_text_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_text_after}{input_after}
 HTML;
 
 
 // Search field input
 $templates['tpl_input_search']		= <<<HTML
+{input_before}{input_search_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="search" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_search_after}{input_after}
 HTML;
 
 
 // Datetime field input
 $templates['tpl_input_datetime']	= <<<HTML
+{input_before}{input_datetime_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="datetime-local" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_datetime_after}{input_after}
 HTML;
 
 
 // Email field input
 $templates['tpl_input_email']		= <<<HTML
+{input_before}{input_email_before}
 <label for="{id}" class="f6 b db mb2">{label} 
 	<span class="{special_classes">{special}</span></label>
 <input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_email_after}{input_after}
 HTML;
 
 
 // Password field input
 $templates['tpl_input_pass']		= <<<HTML
+{input_before}{input_pass_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
 <input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
-	class="{input_classes}" {extra}>
+	class="{input_classes}" {required}{extra}>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_pass_after}{input_after}
 HTML;
 
 
 // Multiline text block content input
 $templates['tpl_input_multiline']	= <<<HTML
+{input_before}{input_multiline_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
 <textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
-	class="{input_classes}" {extra}>{value}</textarea>
+	class="{input_classes}" {required}{extra}>{value}</textarea>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_multiline_after}{input_after}
 HTML;
 
 // Checkbox input
 $templates['tpl_input_checkbox']	= <<<HTML
+{input_before}{input_checkbox_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" value="{value}" type="checkbox"
-		class="{input_classes}" aria-describedby="{id}-desc">
+		class="{input_classes}" aria-describedby="{id}-desc"
+		{required}{extra}>
 	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_checkbox_after}{input_after}
 HTML;
 
 
 // Upload input
 $templates['tpl_input_upload']		= <<<HTML
+{input_before}{input_upload_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {extra}>
+	aria-describedby="{id}-desc" {required}{extra}>
 	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_upload_after}{input_after}
 HTML;
 
 // Upload input no description
 $templates['tpl_input_upload_nd']	= <<<HTML
+{input_before}{input_upload_before}
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {extra}>
+	aria-describedby="{id}-desc" 
+	{required}{extra}>{input_upload_after}{input_after}
 HTML;
 
 
@@ -214,106 +239,132 @@ HTML;
 
 // Text field input
 $templates['tpl_input_text_se']		= <<<HTML
+{input_before}{input_text_before}
 <input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_text_after}{input_after}
 HTML;
 
 
 // Password field input
 $templates['tpl_input_pass_se']		= <<<HTML
+{input_before}{input_pass_before}
 <input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
-	class="{input_classes}" {extra}>
+	class="{input_classes}" {required}{extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_pass_after}{input_after}
 HTML;
 
 
 // Email field input
 $templates['tpl_input_email_se']	= <<<HTML
+{input_before}{input_email_before}
 <input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {extra}>
+	class="{input_classes}" value="{value}" {required}{extra}>
 <label for="{id}" class="f6 b db mb2">{label} 
 	<span class="{special_classes">{special}</span></label>
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_email_after}{input_after}
 HTML;
 
 // Multiline text block content input
 $templates['tpl_input_multiline_se']	= <<<HTML
+{input_before}{input_multiline_before}
 <textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
-	class="{input_classes}" {extra}>{value}</textarea>
+	class="{input_classes}" {required}{extra}>{value}</textarea>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label> 
 <small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_multiline_after}{input_after}
 HTML;
 
 // Upload input
 $templates['tpl_input_upload_se']	= <<<HTML
+{input_before}{input_upload_before}
 <input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {extra}>
+	aria-describedby="{id}-desc" {required}{extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
 	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_upload_after}{input_after}
 HTML;
 
 // Upload input no description
 $templates['tpl_input_text_nd_se']	= <<<HTML
+{input_before}{input_text_before}
 <input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {extra}>
+	aria-describedby="{id}-desc" {required}{extra}>
 <label for="{id}" class="{label_classes}">{label} 
 	<span class="{special_classes}">{special}</span></label>
+{input_text_after}{input_after}
 HTML;
 
+
+$templates['tpl_id_field']	=<<<HTML
+<input type="hidden" name="id" value="{id}">
+HTML;
 
 
 // Post button
 $templates['tpl_input_submit']		= <<<HTML
-<input type="submit" id="{id}" name="{name}" value="{value}" 
-	class="{submit_classes}" {extra}>
+{input_before}{input_submit_before}<input type="submit" id="{id}" 
+	name="{name}" value="{value}" class="{submit_classes}" 
+	{extra}>{input_submit_after}{input_after}
 HTML;
 
 // Alternate submit (E.G. Save draft, search)
 $templates['tpl_input_submit_alt']	= <<<HTML
-<input type="submit" id="{id}" name="{name}" value="{value}" 
-	class="{alt_classes}" {extra}>
+{input_before}{input_submit_before}{input_submit_alt_before}<input 
+	type="submit" id="{id}" name="{name}" value="{value}" class="{alt_classes}" 
+	{extra}>{input_submit_after}{input_submit_alt_after}{input_after}
 HTML;
 
 // Critical submit (E.G. Delete)
 $templates['tpl_input_submit_warn']	= <<<HTML
-<input type="submit" name="{name}" value="{value}" 
-	class="{warn_classes}" {extra}>
+{input_before}{input_warn_before}<input type="submit" name="{name}" 
+	value="{value}" class="{warn_classes}" 
+	{extra}>{input_warn_after}{input_after}
 HTML;
 
 // Action submit (E.G. Sort)
 $templates['tpl_input_submit_action']	= <<<HTML
-<input type="submit" name="{name}" value="{value}" 
-	class="{action_classes}" {extra}>
+{input_before}{input_action_before}<input type="submit" name="{name}" 
+	value="{value}" class="{action_classes}" 
+	{extra}>{input_action_after}{input_after}
 HTML;
 
 // Generic block input form
 $templates['tpl_form_block']		= <<<HTML
+{form_before}{form_block_before}
 <form id="{id}" action="{action}" method="{method}" enctype="{enctype}" 
-	class="{form_classes}" {extra}>{fields}</form>
+	class="{form_classes}" 
+	{extra}>{form_input_before}{fields}{form_input_after}</form>
+{form_block_after}{form_after}
 HTML;
 
 // Generic inline form
 $templates['tpl_form']			= <<<HTML
+{form_before}{form_inline_before}
 <form id="{form_classes}" method="{method}" action="{action}" 
-	enctype="{enctype}" accept-charset="UTF-8" {extra}>{fields}</form>
+	enctype="{enctype}" accept-charset="UTF-8" 
+	{extra}>{form_input_before}{fields}{form_input_after}</form>
+{form_inline_after}{form_after}
+HTML;
+
+// Form field input wrap
+$templates['tpl_form_input_wrap']	=<<<HTML
+{input_wrap_before}<p class="{input_wrap_classes}">{input}</p>{input_wrap_after}
 HTML;
 
 
 /**********************************************************************
  *                      Caution editing below
  **********************************************************************/
-
-/**
- *  Self identification
- */
-define( 'RENDER_PLUGIN',	1 );
 
 
 /**
@@ -385,7 +436,8 @@ function getRenderRegex() {
 		return $regex;
 	}
 	
-	$m	= \str_repeat( \RENDER_RX_REPEAT, \RENDER_MAX_DEPTH );
+	$mxd	= config( 'render_max_dpth', \RENDER_MAX_DEPTH, 'int' );
+	$m	= \str_repeat( \RENDER_RX_REPEAT, $mxd );
 	$regex	= \strtr( \RENDER_RX_MATCH, [ '{repeat}' => $m ] );
 	
 	return $regex;
@@ -409,10 +461,12 @@ function parseRender( string $tpl ) : array {
 	\preg_match_all( getRenderRegex(), $tpl, $matches );
 	$groups	= [];
 	
-	foreach( \array_chunk( 
-		$matches, \RENDER_IDX_ITEM + \RENDER_IDX_SKIP 
-	) as $m ) {
-		$groups[$m[0]] = $m[\RENDER_IDX_PARAM];
+	$rii = config( 'render_idx_item', \RENDER_IDX_ITEM, 'int' );
+	$ris = config( 'render_idx_skip', \RENDER_IDX_SKIP, 'int' );
+	$rip = config( 'render_idx_param', \RENDER_IDX_PARAM, 'int' );
+	$mrc = \array_chunk( $matches, $rii + $ris );
+	foreach ( $mrc as $m ) {
+		$groups[$m[0]] = $m[$rip];
 	}
 	
 	$parsed[$key] = $groups;
@@ -566,7 +620,7 @@ function pagination(
 	int		$total, 
 	int		$limit, 
 	string		$root		= "/",
-	string		$prefix		= "-page",
+	string		$prefix		= "page",
 	int		$adj		= 3,
 	int		$buf		= 7
 )  {
