@@ -7,6 +7,52 @@ if ( !defined( 'PATH' ) ) { die(); }
  *  Add this plugin to 'plugins_enabled' before the templates plugin if using both
  */
 
+
+/**
+ * Base templates for building a page from scratch
+ */
+$templates['tpl_skeleton']		= <<<HTML
+<!DOCTYPE html>
+<html lang="{lang}">
+<head>
+	{head}
+</head>
+<body class="{body_classes}" {extra}>
+	{body}
+</body>
+</html>
+HTML;
+
+$templates['tpl_skeleton_title']	= <<<HTML
+<title>{title}</title>
+HTML;
+
+$templates['tpl_rel_tag']		=<<<HTML
+<link rel="{rel}" type="{type}" title="{title}" href="{url}">
+HTML;
+
+// Rel tag without type or titlte
+$templates['tpl_rel_tag_nt']		='<link rel="{rel}" href="{url}">';
+
+// These are also in index.php, but these can be modified by plugins
+$templates['tpl_style_tag']		= '<link rel="stylesheet" href="{url}">';
+$templates['tpl_meta_tag']		= '<meta name="{name}" content="{content}">';
+$templates['tpl_script_tag']		= '<script src="{url}"></script>';
+
+// Template fragments
+$templates['tpl_anchor']		= '<a href="{url}">{text}</a>';
+$templates['tpl_para']			= '<p {extra}>{html}</p>';
+$templates['tpl_span']			= '<span {extra}>{html}</span>';
+$templates['tpl_div']			= '<div {extra}>{html}</div>';
+$templates['tpl_main']			= '<main {extra}>{html}</main>';
+$templates['tpl_article']		= '<article {extra}>{html}</article>';
+$templates['tpl_header']		= '<header {extra}>{html}</header>';
+$templates['tpl_aside']			= '<aside {extra}>{html}</aside>';
+$templates['tpl_footer']		= '<footer {extra}>{html}</footer>';
+
+// data-reference HTML 5 attribute, E.G. <span data-rel="author">
+$templates['tpl_data_pfx']		= 'data-{term}="{value}"';
+
 /**
  *  Navigation components
  */
@@ -354,6 +400,12 @@ $templates['tpl_form']			= <<<HTML
 	enctype="{enctype}" accept-charset="UTF-8" 
 	{extra}>{form_input_before}{fields}{form_input_after}</form>
 {form_inline_after}{form_after}
+HTML;
+
+// Form fieldset wrap
+$templates['tpl_form_fieldset']		=<<<HTML
+{input_fieldset_before}<fieldset 
+	class="{fieldset_classes}">{input}</fieldset>{input_fieldset_after}
 HTML;
 
 // Form field input wrap
@@ -765,3 +817,55 @@ function breadcrumbs(
 	
 	return render( $out, $params );
 }
+
+
+
+
+/**
+ *  Render settings validator
+ */
+function checkRenderConfig( string $event, array $hook, array $params ) {
+	$filter	= [
+		'render_max_dpth'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 50,
+				'default'	=> \RENDER_MAX_DEPTH
+			]
+		],
+		'render_idx_item'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 20,
+				'default'	=> \RENDER_IDX_ITEM
+			]
+		],
+		'render_idx_param'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 20,
+				'default'	=> \RENDER_IDX_PARAM
+			]
+		],
+		'render_idx_skip'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 20,
+				'default'	=> \RENDER_IDX_SKIP
+			]
+		]
+	];
+	
+	return 
+	\array_merge( $hook, \filter_var_array( $params, $filter ) );
+}
+
+
+// Render events
+
+// Check configuration
+hook( [ 'checkconfig',	'checkRenderConfig' ] );
