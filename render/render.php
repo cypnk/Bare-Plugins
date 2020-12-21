@@ -519,6 +519,11 @@ $templates['tpl_form_input_wrap']	=<<<HTML
 {input_wrap_before}<p class="{input_wrap_classes}">{input}</p>{input_wrap_after}
 HTML;
 
+// Form button wrap
+$templates['tpl_form_button_wrap']	=<<<HTML
+{button_wrap_before}<p class="{button_wrap_classes}">{buttons}</p>{button_wrap_after}
+HTML;
+
 
 /**********************************************************************
  *                      Caution editing below
@@ -643,10 +648,200 @@ function processTemplate( string $tpl ) {
 }
 */
 
+
 /**
  *  Input form generation
  */
 
+/**
+ *  Create a user input form and apply hooks per placeholder
+ *  
+ *  @param string	$name		Form name (also used for XSRF)
+ *  @param array	$fields		Form content input defaults
+ *  @param array	$buttons	Form  submission or other buttons
+ *  @param bool		$is_block	Block level form if true
+ *  @return string
+ */
+function createForm(
+	string	$name,
+	array	$fields,
+	array	$buttons	= [],
+	bool	$is_block	= true,
+) : string {
+	// Inline or block type form
+	$tpl		= $is_block ? 'tpl_form_block' : 'tpl_form';
+	
+	// Hook options
+	$opts		= [ 'name' => $name, 'fields' => $fields, 'buttons' => $buttons ];
+	
+	// Pre-input hooks
+	hook( [ 'formbefore', $opts ] );
+	
+	// Call block level or inline level form hooks
+	// Replace input fields if needed
+	if ( $is_block ) {
+		hook( [ 'formblockbefore', $opts ] );
+		$opts['fields'] = hookArrayResult( 'formblockbefore', $fields );
+	} else {
+		hook( [ 'forminlinebefore', $opts ] );
+		$opts['fields'] = hookArrayResult( 'formblockbefore', $fields );
+	}
+	
+	hook( [ 'forminputbefore', $opts ] );
+	
+	// Create anti-XSRF token fields before other fields
+	$pair	= genNoncePair( $name );
+	$out	= 
+	hookWrap( 
+		'beforesearchxsrf',
+		'afterearchxsrf',
+		template( 'tpl_input_xsrf' ), 
+		[ 'nonce' => $pair['nonce'], 'token' => $pair['token'] ]
+	);
+	
+	// Append other fields
+	foreach ( $opts['fields'] as $f ) {
+		// Add given field with template or build from scratch
+		// This only works if 'type' is given, E.G. number, range etc...
+		$out .= 
+		createInputField( 
+			$f['name'] ?? '', 
+			$f['template'] ?? \strtr( 
+				template( 'tpl_input_field' ), 
+				[ '{input}' => template( 'tpl_input' ) ]
+			), $f, true
+		);
+	}
+	
+	// Append buttons
+	$btn	= '';
+	hook( [ 'buttonwrapbefore', $opts ] );
+	hook( [ 'buttonwrapafter', $opts ] );
+	foreach ( $buttons as $b ) {
+		$btn .= 
+		createInputField( 
+			$f['name'] ?? '', 
+			$f['template'] ?? 'tpl_input_submit', $f, true
+		);
+	}
+	
+	$out	.= 
+	render( template( 'tpl_form_button_wrap' ), [ 
+		'button_wrap_before'	=> hookStringResult( 'buttonwrapbefore' ),
+		'button_wrap_after'	=> hookStringResult( 'buttonwrapafter' ),
+		'buttons'		=> $btn
+	] );
+	
+	// Post-input hooks
+	hook( [ 'forminputafter', $opts ] );
+	if ( $is_block ) {
+		hook( [ 'formblockafter',  $opts ] );
+	} else {
+		hook( [ 'forminlineafter', $opts ] );
+	}
+	
+	hook( [ 'formafter', $opts ] );
+	
+	$vars	= [
+		'form_before'		=> hookStringResult( 'formbefore' ), 
+		'form_after'		=> hookStringResult( 'formafter' ),
+		'form_input_before'	=> hookStringResult( 'forminputbefore' ),
+		'form_input_after'	=> hookStringResult( 'forminputafter' ),
+		'fields'		=> $out
+	];
+	
+	if ( $is_block ) {
+		$vars['form_block_before']	= hookStringResult( 'formblockbefore' );
+		$vars['form_block_after']	= hookStringResult( 'formblockafter' );
+	} else {
+		$vars['form_inline_before']	= hookStringResult( 'forminlinebefore' );
+		$vars['form_inline_after']	= hookStringResult( 'forminlineafter' );
+	}
+	
+	return render( template( $tpl ), $vars ) );
+}
+
+/**
+ *  Create an input field and apply hooks per placeholder
+ *  
+ *  @param string		$name		Input field name
+ *  @param string		$tpl		Rendering template
+ *  @param array		$vars		Starting default values
+ *  @return string
+ */
+function createInputField(
+	string		$name, 
+	string		$tpl, 
+	array		$vars
+) : string {
+	// Set field ID if not already set
+	$vars['id']	= $vars['id'] ?? $name;
+	
+	// Input specific hook events
+	$nbf		= 'input' . $name . 'before';
+	$naf		= 'input' . $name . 'after';
+	
+	// Hook settings
+	$opts		= [ 'name' => $name, 'details' => $vars ];
+	
+	/**
+	 *  Run field hooks
+	 */
+	// General input before/after hooks
+	hook( [ 'inputbefore', $opts ] );
+	hook( [ 'inputafter', $opts ] );
+	
+	// Input name specific before/after hooks
+	hook( [ $nbf, $opts ] );
+	hook( [ $naf, $opts ] );
+	
+	// Input label and special detail hooks
+	hook( [ 'labelbefore', $opts ] );
+	hook( [ 'labelafter', $opts ] );
+	
+	hook( [ 'specialbefore', $opts ] );
+	hook( [ 'specialafter', $opts ] );
+	
+	// Input field hooks
+	hook( [ 'inputfieldbefore', $opts ] );
+	hook( [ 'inputfieldafter', $opts ] );
+	
+	// Description/help info hooks
+	hook( [ 'desc_before', $opts ] );
+	hook( [ 'desc_after', $opts ] );
+	
+	// Form field input wrap
+	hook( [ 'inputwrapbefore', $opts ] );
+	hook( [ 'inputwrapafter', $opts ] );
+	
+	$out		= 
+	\array_merge( $vars, [
+		'input_before'			=> hookStringResult( 'inputbefore' ),
+		'input_after'			=> hookStringResult( 'inputafter' ),
+		
+		'input_' . $name .'_before'	=> hookStringResult( $nbf ),
+		'input_' . $name .'_after'	=> hookStringResult( $naf ),
+		
+		'label_before'			=> hookStringResult( 'labelbefore' ),
+		'input_after'			=> hookStringResult( 'labelafter' ),
+		
+		'special_before'		=> hookStringResult( 'specialbefore' ),
+		'special_after'			=> hookStringResult( 'specialafter' ),
+		
+		'input_field_before'		=> hookStringResult( 'inputfieldbefore' ),
+		'input_field_before'		=> hookStringResult( 'inputfieldafter' ),
+		
+		'desc_before'			=> hookStringResult( 'descbefore' ),
+		'desc_after'			=> hookStringResult( 'descafter' ),
+	] );
+	
+	return 
+	render( template( 'tpl_form_input_wrap' ), [ 
+		'input_wrap_before'	=> hookStringResult( 'inputwrapbefore' ),
+		'input_wrap_after'	=> hookStringResult( 'inputwrapafter' ),
+		'input'			=> render( template( $tpl ), $out )
+	] );
+}
 
 /**
  *  Create select input field from options
