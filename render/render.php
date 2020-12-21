@@ -59,29 +59,31 @@ $templates['tpl_data_pfx']		= 'data-{term}="{value}"';
 
 // Breadcrumb path wrapper
 $templates['tpl_breadcrumbs']	= <<<HTML
+{crumbs_before}
 <nav class="{crumb_classes}">
-<ul class="{crumb_wrap_classes}">{links}</ul>
-</nav>
+<ul class="{crumb_wrap_classes}">{crumbs_links_before}{links}{crumbs_links_before}</ul>
+</nav>{crumbs_after}
 HTML;
 
 // Breadcrumb within content
 $templates['tpl_sub_breadcrumbs']	= <<<HTML
-<nav class="{crumb_sub_classes}">
-<ul class="{crumb_sub_wrap_classes}">{links}</ul>
-</nav>
+{crumbs_sub_before}<nav class="{crumb_sub_classes}">
+{crumbs_sub_ul_before}
+<ul class="{crumb_sub_wrap_classes}">{links}</ul>{crumbs_sub_ul_after}
+</nav>{crumbs_sub_after}
 HTML;
 
 // Breadcrumb link
 $templates['tpl_crumb_link']		= <<<HTML
-<li class="{crumb_item_classes}">
-<a href="{url}" class="{crumb_link_classes}">{label}</a>
+<li class="{crumb_item_classes}">{crumb_link_before}
+<a href="{url}" class="{crumb_link_classes}">{label}</a>{crumb_link_after}
 </li>
 HTML;
 
 // Breadcrumb current page
 $templates['tpl_crumb_current']		= <<<HTML
-<li class="{crumb_current_classes}">
-<span class="{crumb_current_item}" title="{url}">{label}</span>
+<li class="{crumb_current_classes}">{crumb_current_before}
+<span class="{crumb_current_item}" title="{url}">{label}</span>{crumb_current_after}
 </li>
 HTML;
 
@@ -147,6 +149,63 @@ $templates['tpl_pagination']		= <<<HTML
 HTML;
 
 
+
+/**
+ *  Custom input building blocks
+ */
+
+// Inline input field
+$templates['tpl_input']			= <<<HTML
+{input_field_before}
+<input id="{id}" name="{name}" type="{type}" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+		{required}{extra}>{input_field_after} 
+HTML;
+
+// Input field without description
+$templates['tpl_input_nd']		= <<<HTML
+{input_field_before}<input id="{id}" name="{name}" type="{type}" 
+	class="{input_classes}" {required}{extra}>{input_field_after}
+HTML;
+
+// Combined input field with label and description
+$templates['tpl_input_field']		= <<<HTML
+{input_before}
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
+HTML;
+
+// Combined input field with label and without description
+$templates['tpl_input_field_nd']	= <<<HTML
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input}
+HTML;
+
+// Input with label after input field
+$templates['tpl_input_field_se']	= <<<HTML
+{input} 
+<label for="{id}" class="{label_classes}">{label} 
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}
+HTML;
+
+// Input no description
+$templates['tpl_input_field_nd_se']	= <<<HTML
+{input} 
+<label for="{id}" class="{label_classes}">{label} 
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after}
+HTML;
+
+
 /**
  *  User input form building blocks
  */
@@ -158,14 +217,16 @@ HTML;
 
 // Select dropdown
 $templates['tpl_input_select']		= <<<HTML
-{input_before}{input_select_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label> 
+{input_before}{input_select_before}{label_before}
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
 <select id="{id}" name="{name}" aria-describedby="{id}-desc"
 	class="{input_classes}" {required}{extra}>
 	{unselect_option}{options}</select>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
-{input_input_after}{input_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}
+{input_select_after}{input_after}
 HTML;
 
 // Unselected dropdown option
@@ -176,11 +237,14 @@ HTML;
 // Text field input
 $templates['tpl_input_text']		= <<<HTML
 {input_before}{input_text_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="text" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	value="{value}" {required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_text_after}{input_after}
 HTML;
 
@@ -188,11 +252,14 @@ HTML;
 // Search field input
 $templates['tpl_input_search']		= <<<HTML
 {input_before}{input_search_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" type="search" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="search" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	value="{value}" {required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_search_after}{input_after}
 HTML;
 
@@ -200,11 +267,15 @@ HTML;
 // Datetime field input
 $templates['tpl_input_datetime']	= <<<HTML
 {input_before}{input_datetime_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" type="datetime-local" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="datetime-local" 
+	aria-describedby="{id}-desc"
+	class="{input_classes}" value="{value}" 
+	{required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_datetime_after}{input_after}
 HTML;
 
@@ -212,11 +283,15 @@ HTML;
 // Email field input
 $templates['tpl_input_email']		= <<<HTML
 {input_before}{input_email_before}
-<label for="{id}" class="f6 b db mb2">{label} 
-	<span class="{special_classes">{special}</span></label>
-<input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="email" 
+	aria-describedby="{id}-desc"
+	class="{input_classes}" value="{value}" 
+	{required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_email_after}{input_after}
 HTML;
 
@@ -224,11 +299,14 @@ HTML;
 // Password field input
 $templates['tpl_input_pass']		= <<<HTML
 {input_before}{input_pass_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label> 
-<input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
-	class="{input_classes}" {required}{extra}>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="password" 
+	aria-describedby="{id}-desc" 
+	class="{input_classes}" {required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_pass_after}{input_after}
 HTML;
 
@@ -236,23 +314,28 @@ HTML;
 // Multiline text block content input
 $templates['tpl_input_multiline']	= <<<HTML
 {input_before}{input_multiline_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label> 
-<textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
-	class="{input_classes}" {required}{extra}>{value}</textarea>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<textarea id="{id}" name="{name}" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	{required}{extra}>{value}</textarea>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_multiline_after}{input_after}
 HTML;
 
 // Checkbox input
 $templates['tpl_input_checkbox']	= <<<HTML
 {input_before}{input_checkbox_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" value="{value}" type="checkbox"
-		class="{input_classes}" aria-describedby="{id}-desc"
-		{required}{extra}>
-	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" value="{value}" 
+	type="checkbox" class="{input_classes}" 
+	aria-describedby="{id}-desc" {required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_checkbox_after}{input_after}
 HTML;
 
@@ -260,22 +343,26 @@ HTML;
 // Upload input
 $templates['tpl_input_upload']		= <<<HTML
 {input_before}{input_upload_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {required}{extra}>
-	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="file" 
+	class="{input_classes}" aria-describedby="{id}-desc" 
+	{required}{extra}>{input_field_after}
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_upload_after}{input_after}
 HTML;
 
 // Upload input no description
 $templates['tpl_input_upload_nd']	= <<<HTML
 {input_before}{input_upload_before}
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" 
-	{required}{extra}>{input_upload_after}{input_after}
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{input_field_before}<input id="{id}" name="{name}" type="file" 
+	class="{input_classes}" aria-describedby="{id}-desc" 
+	{required}{extra}>{input_field_after}{input_upload_after}{input_after}
 HTML;
 
 
@@ -286,11 +373,14 @@ HTML;
 // Text field input
 $templates['tpl_input_text_se']		= <<<HTML
 {input_before}{input_text_before}
-<input id="{id}" name="{name}" type="text" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_field_before}<input id="{id}" name="{name}" type="text" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	value="{value}" {required}{extra}>{input_field_after} 
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_text_after}{input_after}
 HTML;
 
@@ -298,11 +388,14 @@ HTML;
 // Password field input
 $templates['tpl_input_pass_se']		= <<<HTML
 {input_before}{input_pass_before}
-<input id="{id}" name="{name}" type="password" aria-describedby="{id}-desc"
-	class="{input_classes}" {required}{extra}>
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label> 
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_field_before}<input id="{id}" name="{name}" type="password" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	{required}{extra}>{input_field_after} 
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_pass_after}{input_after}
 HTML;
 
@@ -310,43 +403,56 @@ HTML;
 // Email field input
 $templates['tpl_input_email_se']	= <<<HTML
 {input_before}{input_email_before}
-<input id="{id}" name="{name}" type="email" aria-describedby="{id}-desc"
-	class="{input_classes}" value="{value}" {required}{extra}>
-<label for="{id}" class="f6 b db mb2">{label} 
-	<span class="{special_classes">{special}</span></label>
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_field_before}<input id="{id}" name="{name}" type="email" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	value="{value}" {required}{extra}>{input_field_after} 
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_email_after}{input_after}
 HTML;
 
 // Multiline text block content input
 $templates['tpl_input_multiline_se']	= <<<HTML
 {input_before}{input_multiline_before}
-<textarea id="{id}" name="{name}" aria-describedby="{id}-desc" 
-	class="{input_classes}" {required}{extra}>{value}</textarea>
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label> 
-<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_field_before}<textarea id="{id}" name="{name}" 
+	aria-describedby="{id}-desc" class="{input_classes}" 
+	{required}{extra}>{value}</textarea>{input_field_after} 
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_multiline_after}{input_after}
 HTML;
 
 // Upload input
 $templates['tpl_input_upload_se']	= <<<HTML
 {input_before}{input_upload_before}
-<input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {required}{extra}>
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
-	<small id="{id}-desc" class="{desc_classes}" {desc_extra}>{desc}</small>
+{input_field_before}<input id="{id}" name="{name}" type="file" 
+	class="{input_classes}" aria-describedby="{id}-desc" 
+	{required}{extra}>{input_field_after}
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_upload_after}{input_after}
 HTML;
 
 // Upload input no description
 $templates['tpl_input_text_nd_se']	= <<<HTML
 {input_before}{input_text_before}
-<input id="{id}" name="{name}" type="file" class="{input_classes}" 
-	aria-describedby="{id}-desc" {required}{extra}>
-<label for="{id}" class="{label_classes}">{label} 
-	<span class="{special_classes}">{special}</span></label>
+{input_field_before}<input id="{id}" name="{name}" type="file" 
+	lass="{input_classes}" aria-describedby="{id}-desc" 
+	{required}{extra}>{input_field_after} 
+{label_before}<label for="{id}" class="{label_classes}">{label}
+	{special_before}<span class="{special_classes}"
+	>{special}</span>{special_after}</label>{label_after} 
+{desc_before}<small id="{id}-desc" class="{desc_classes}" 
+	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_text_after}{input_after}
 HTML;
 
