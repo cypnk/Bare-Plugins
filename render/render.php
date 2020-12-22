@@ -654,6 +654,66 @@ function processTemplate( string $tpl ) {
  */
 
 /**
+ *  Form field template selection helper based on input type
+ *  
+ *  @param array	$field		Form field parameters
+ */
+function createFormField( array $field ) {
+	$tpl	= '';
+	$type	= lowercase( $field['type'] ?? '' );
+	
+	// Try to retrieve given template or use default based on type
+	switch ( $type ) {
+		case 'select':
+			$tpl = $field['template'] ?? template( 'tpl_input_select' );
+			break;
+			
+		case 'text':
+			$tpl = $field['template'] ?? template( 'tpl_input_text' );
+			break;
+			
+		case 'date-time':
+		case 'datetime':
+			$tpl = $field['template'] ?? template( 'tpl_input_datetime' );
+			break;
+			
+		case 'email':
+			$tpl = $field['template'] ?? template( 'tpl_input_email' );
+			break;
+			
+		case 'pass':
+		case 'password':
+			$tpl = $field['template'] ?? template( 'tpl_input_pass' );
+			break;
+		
+		case 'textarea':
+		case 'multiline':
+			$tpl = $field['template'] ?? template( 'tpl_input_multiline' );
+			break;
+			
+		case 'checkbox':
+			$tpl = $field['template'] ?? template( 'tpl_input_checkbox' );
+			break;
+			
+		case 'file':
+		case 'upload':
+			$tpl = $field['template'] ?? template( 'tpl_input_upload' );
+			break;
+		
+		// This only works if 'type' is given, E.G. number, range etc...
+		default:
+			$tpl = 
+			$field['template'] ?? \strtr( 
+				template( 'tpl_input_field' ), 
+				[ '{input}' => template( 'tpl_input' ) ]
+			);
+	}
+	
+	return 
+	createInputField( $field['name'] ?? '', $tpl, $field, true );
+}
+
+/**
  *  Create a user input form and apply hooks per placeholder
  *  
  *  @param string	$name		Form name (also used for XSRF)
@@ -701,18 +761,10 @@ function createForm(
 		[ 'nonce' => $pair['nonce'], 'token' => $pair['token'] ]
 	);
 	
+	$itpl = '';
 	// Append other fields
 	foreach ( $opts['fields'] as $f ) {
-		// Add given field with template or build from scratch
-		// This only works if 'type' is given, E.G. number, range etc...
-		$out .= 
-		createInputField( 
-			$f['name'] ?? '', 
-			$f['template'] ?? \strtr( 
-				template( 'tpl_input_field' ), 
-				[ '{input}' => template( 'tpl_input' ) ]
-			), $f, true
-		);
+		$out .= createFormField( $f );
 	}
 	
 	// Append buttons
@@ -839,11 +891,20 @@ function createInputField(
 		'desc_after'			=> hookStringResult( 'descafter' ),
 	] );
 	
+	// Select is a special type
+	$input	= 
+	( 0 == \strcasecmp( $vars['type'] ?? '', 'select' ) ) ? 
+		createSelect(
+			$tpl,
+			$out,
+			$vars['options'] ?? []
+		) : render( $tpl, $out );
+	
 	return 
 	render( template( 'tpl_form_input_wrap' ), [ 
 		'input_wrap_before'	=> hookStringResult( 'inputwrapbefore' ),
 		'input_wrap_after'	=> hookStringResult( 'inputwrapafter' ),
-		'input'			=> render( template( $tpl ), $out )
+		'input'			=> $input
 	] );
 }
 
@@ -855,7 +916,6 @@ function createSelect(
 	array		$vars, 
 	array		$opts 
 ) : string {
-	$tpl	= render( $tpl, $vars );
 	$out	= '';
 	foreach ( $opts as $o ) {
 		$out	.= 
@@ -867,7 +927,8 @@ function createSelect(
 		] );
 	}
 	
-	return render( $tpl, [ 'options' => $out ] );
+	return 
+	render( $tpl, \array_merge( $vars, [ 'options' => $out ] ) );
 }
 
 /**
