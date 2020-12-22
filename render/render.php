@@ -666,13 +666,15 @@ function createForm(
 	string	$name,
 	array	$fields,
 	array	$buttons	= [],
-	bool	$is_block	= true,
+	bool	$is_block	= true
 ) : string {
 	// Inline or block type form
-	$tpl		= $is_block ? 'tpl_form_block' : 'tpl_form';
+	$tpl	= $is_block ? 'tpl_form_block' : 'tpl_form';
 	
 	// Hook options
-	$opts		= [ 'name' => $name, 'fields' => $fields, 'buttons' => $buttons ];
+	$opts	= 
+	[ 'name' => $name, 'is_block' => $is_block, 'fields' => $fields, 
+		'buttons' => $buttons ];
 	
 	// Pre-input hooks
 	hook( [ 'formbefore', $opts ] );
@@ -681,10 +683,10 @@ function createForm(
 	// Replace input fields if needed
 	if ( $is_block ) {
 		hook( [ 'formblockbefore', $opts ] );
-		$opts['fields'] = hookArrayResult( 'formblockbefore', $fields );
+		$opts = hookArrayResult( 'formblockbefore', $opts );
 	} else {
 		hook( [ 'forminlinebefore', $opts ] );
-		$opts['fields'] = hookArrayResult( 'formblockbefore', $fields );
+		$opts = hookArrayResult( 'formblockbefore', $opts );
 	}
 	
 	hook( [ 'forminputbefore', $opts ] );
@@ -693,8 +695,8 @@ function createForm(
 	$pair	= genNoncePair( $name );
 	$out	= 
 	hookWrap( 
-		'beforesearchxsrf',
-		'afterearchxsrf',
+		'before'. $name .'xsrf',
+		'after'. $name .'xsrf',
 		template( 'tpl_input_xsrf' ), 
 		[ 'nonce' => $pair['nonce'], 'token' => $pair['token'] ]
 	);
@@ -740,8 +742,10 @@ function createForm(
 		hook( [ 'forminlineafter', $opts ] );
 	}
 	
+	// Form after event
 	hook( [ 'formafter', $opts ] );
 	
+	// Append template placeholders
 	$vars	= [
 		'form_before'		=> hookStringResult( 'formbefore' ), 
 		'form_after'		=> hookStringResult( 'formafter' ),
@@ -758,7 +762,7 @@ function createForm(
 		$vars['form_inline_after']	= hookStringResult( 'forminlineafter' );
 	}
 	
-	return render( template( $tpl ), $vars ) );
+	return render( template( $tpl ), $vars );
 }
 
 /**
@@ -988,6 +992,7 @@ function pagination(
 	$out	= '';
 	
 	if ( $lp > 1 ) {
+		// Show previous
 		if ( $page > 1 ) {
 			$out .= npLink( $root, $prefix, $prev, true );
 		} else {
@@ -1044,6 +1049,7 @@ function pagination(
 			}
 		}
 		
+		// Show next
 		if ( $page < $i - 1 ) {
 			$out .= npLink( $root, $prefix, $next, false );
 		} else {
@@ -1052,7 +1058,7 @@ function pagination(
 	}
 	
 	return 
-	render( template( 'tpl_pagination' ), ['links' => $out ] );
+	render( template( 'tpl_pagination' ), [ 'links' => $out ] );
 }
 
 
