@@ -159,13 +159,14 @@ $templates['tpl_input']			= <<<HTML
 {input_field_before}
 <input id="{id}" name="{name}" type="{type}" 
 	aria-describedby="{id}-desc" class="{input_classes}" 
-		{required}{extra}>{input_field_after} 
+	placeholder="{placeholder}" {required}{extra}>{input_field_after} 
 HTML;
 
 // Input field without description
 $templates['tpl_input_nd']		= <<<HTML
 {input_field_before}<input id="{id}" name="{name}" type="{type}" 
-	class="{input_classes}" {required}{extra}>{input_field_after}
+	placeholder="{placeholder}" class="{input_classes}" 
+	{required}{extra}>{input_field_after}
 HTML;
 
 // Combined input field with label and description
@@ -241,8 +242,8 @@ $templates['tpl_input_text']		= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="text" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	value="{value}" {required}{extra}>{input_field_after}
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
+	class="{input_classes}" value="{value}" {required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
 	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_text_after}{input_after}
@@ -256,8 +257,8 @@ $templates['tpl_input_search']		= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="search" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	value="{value}" {required}{extra}>{input_field_after}
+	aria-describedby="{id}-desc"  placeholder="{placeholder}" 
+	class="{input_classes}" value="{value}" {required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
 	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_search_after}{input_after}
@@ -271,7 +272,7 @@ $templates['tpl_input_datetime']	= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="datetime-local" 
-	aria-describedby="{id}-desc"
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
 	class="{input_classes}" value="{value}" 
 	{required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
@@ -287,7 +288,7 @@ $templates['tpl_input_email']		= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="email" 
-	aria-describedby="{id}-desc"
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
 	class="{input_classes}" value="{value}" 
 	{required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
@@ -303,7 +304,7 @@ $templates['tpl_input_pass']		= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="password" 
-	aria-describedby="{id}-desc" 
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
 	class="{input_classes}" {required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
 	{desc_extra}>{desc}</small>{desc_after}{input_after}
@@ -317,9 +318,9 @@ $templates['tpl_input_multiline']	= <<<HTML
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
-{input_field_before}<textarea id="{id}" name="{name}" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	{required}{extra}>{value}</textarea>{input_field_after}
+{input_field_before}<textarea id="{id}" name="{name}" rows="{rows} cols="{cols}" 
+	placeholder="{placeholder}" aria-describedby="{id}-desc"
+	 class="{input_classes}" {required}{extra}>{value}</textarea>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
 	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_multiline_after}{input_after}
@@ -347,8 +348,8 @@ $templates['tpl_input_upload']		= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="file" 
-	class="{input_classes}" aria-describedby="{id}-desc" 
-	{required}{extra}>{input_field_after}
+	placeholder="{placeholder}" class="{input_classes}" 
+	aria-describedby="{id}-desc" {required}{extra}>{input_field_after}
 {desc_before}<small id="{id}-desc" class="{desc_classes}" 
 	{desc_extra}>{desc}</small>{desc_after}{input_after}
 {input_upload_after}{input_after}
@@ -361,7 +362,8 @@ $templates['tpl_input_upload_nd']	= <<<HTML
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
 {input_field_before}<input id="{id}" name="{name}" type="file" 
-	class="{input_classes}" aria-describedby="{id}-desc" 
+	placeholder="{placeholder}" aria-describedby="{id}-desc" 
+	class="{input_classes}" 
 	{required}{extra}>{input_field_after}{input_upload_after}{input_after}
 HTML;
 
@@ -374,8 +376,8 @@ HTML;
 $templates['tpl_input_text_se']		= <<<HTML
 {input_before}{input_text_before}
 {input_field_before}<input id="{id}" name="{name}" type="text" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	value="{value}" {required}{extra}>{input_field_after} 
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
+	class="{input_classes}" value="{value}" {required}{extra}>{input_field_after} 
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
@@ -389,8 +391,8 @@ HTML;
 $templates['tpl_input_pass_se']		= <<<HTML
 {input_before}{input_pass_before}
 {input_field_before}<input id="{id}" name="{name}" type="password" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	{required}{extra}>{input_field_after} 
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
+	class="{input_classes}" {required}{extra}>{input_field_after} 
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
@@ -404,8 +406,8 @@ HTML;
 $templates['tpl_input_email_se']	= <<<HTML
 {input_before}{input_email_before}
 {input_field_before}<input id="{id}" name="{name}" type="email" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
-	value="{value}" {required}{extra}>{input_field_after} 
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
+	class="{input_classes}" value="{value}" {required}{extra}>{input_field_after} 
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
@@ -418,7 +420,8 @@ HTML;
 $templates['tpl_input_multiline_se']	= <<<HTML
 {input_before}{input_multiline_before}
 {input_field_before}<textarea id="{id}" name="{name}" 
-	aria-describedby="{id}-desc" class="{input_classes}" 
+	aria-describedby="{id}-desc" placeholder="{placeholder}" 
+	rows="{rows} cols="{cols}" class="{input_classes}" 
 	{required}{extra}>{value}</textarea>{input_field_after} 
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
@@ -432,8 +435,8 @@ HTML;
 $templates['tpl_input_upload_se']	= <<<HTML
 {input_before}{input_upload_before}
 {input_field_before}<input id="{id}" name="{name}" type="file" 
-	class="{input_classes}" aria-describedby="{id}-desc" 
-	{required}{extra}>{input_field_after}
+	placeholder="{placeholder}" aria-describedby="{id}-desc" 
+	class="{input_classes}" {required}{extra}>{input_field_after}
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
@@ -446,8 +449,8 @@ HTML;
 $templates['tpl_input_text_nd_se']	= <<<HTML
 {input_before}{input_text_before}
 {input_field_before}<input id="{id}" name="{name}" type="file" 
-	lass="{input_classes}" aria-describedby="{id}-desc" 
-	{required}{extra}>{input_field_after} 
+	placeholder="{placeholder}" aria-describedby="{id}-desc" 
+	class="{input_classes}" {required}{extra}>{input_field_after} 
 {label_before}<label for="{id}" class="{label_classes}">{label}
 	{special_before}<span class="{special_classes}"
 	>{special}</span>{special_after}</label>{label_after} 
@@ -581,6 +584,15 @@ define( 'RENDER_IDX_PARAM',	5 );
  */
 define( 'RENDER_IDX_SKIP',	4 );
 
+/**
+ *  Default textarea columns
+ */
+define( 'RENDER_MULTILINE_COLS', 60 );
+
+/**
+ *  Default textarea rows
+ */
+define( 'RENDER_MULTILINE_ROWS', 10 );
 
 /**
  *  Template and rendering
@@ -689,6 +701,21 @@ function createFormField( array $field ) {
 		case 'textarea':
 		case 'multiline':
 			$tpl = $field['template'] ?? template( 'tpl_input_multiline' );
+			
+			// Set textarea defaults
+			$field['rows'] = 
+			intRange(
+				$field['rows'] ?? 
+				config( 'render_multiline_rows', \RENDER_MULTILINE_ROWS, 'int' ),
+				1, 10000
+			);
+			$field['cols'] = 
+			intRange(
+				$field['cols'] ?? 
+				config( 'render_multiline_cols', \RENDER_MULTILINE_COLS, 'int' ),
+				1, 1000
+			);
+			
 			break;
 			
 		case 'checkbox':
@@ -718,18 +745,37 @@ function createFormField( array $field ) {
  *  
  *  @param string	$name		Form name (also used for XSRF)
  *  @param array	$fields		Form content input defaults
+ *  @param string	$action		Posting location
  *  @param array	$buttons	Form  submission or other buttons
+ *  @param string	$method		Form submission method
+ *  @param string	$enctype	Form encoding type
  *  @param bool		$is_block	Block level form if true
  *  @return string
  */
 function createForm(
 	string	$name,
 	array	$fields,
+	string	$action,
 	array	$buttons	= [],
+	string	$method		= 'get',
+	string	$enctype	= '',
 	bool	$is_block	= true
 ) : string {
+	
+	// Check posting method
+	if ( 0 != \strncasecmp( $method, 'get' ) ) {
+		$ap	= config( 'allow_post', \ALLOW_POST, 'int' );
+		if ( !$ap || 0 != \strncasecmp( $method, 'post' )) {
+			// Don't build this form in a method that isn't allowed
+			return '';
+		}
+	}
+	
 	// Inline or block type form
 	$tpl	= $is_block ? 'tpl_form_block' : 'tpl_form';
+	
+	// Filter encoding type
+	$enctype= cleanFormEnctype( $enctype );
 	
 	// Hook options
 	$opts	= 
@@ -1224,6 +1270,23 @@ function checkRenderConfig( string $event, array $hook, array $params ) {
 				'min_range'	=> 1,
 				'max_range'	=> 20,
 				'default'	=> \RENDER_IDX_SKIP
+			]
+		],
+		'render_multiline_cols'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 100,
+				'default'	=> \RENDER_MULTILINE_COLS
+			]
+		],
+		
+		'render_multiline_rows'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 1,
+				'max_range'	=> 100,
+				'default'	=> \RENDER_MULTILINE_ROWS
 			]
 		]
 	];
