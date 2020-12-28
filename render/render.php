@@ -528,6 +528,31 @@ $templates['tpl_form_button_wrap']	=<<<HTML
 HTML;
 
 
+/**
+ *  Picture templates
+ */
+
+// Single image with description
+$templates['tpl_picture']		=<<<HTML
+{picture_wrap_before}<figure class="{picture_wrap_classes}">
+	{picture}
+	<figcaption class="{picture_caption_classes}">{caption}</figcaption>
+</figure>{picture_wrap_after}
+HTML;
+
+// Single image without a description
+$templates['tpl_picture_nd']		=<<<HTML
+{picture_wrap_before}<figure class="{picture_wrap_classes}">{picture}</figure>{picture_wrap_after}
+HTML;
+
+// Multi-image gallery
+$templates['tpl_gallery']		=<<<HTML
+{gallery_wrap_before}<div class="{gallery_wrap_classes}">
+	{pictures}
+</div>{gallery_wrap_after}
+HTML;
+
+
 /**********************************************************************
  *                      Caution editing below
  **********************************************************************/
@@ -629,12 +654,16 @@ function parseRender( string $tpl ) : array {
 	static $parsed	= [];
 	$key		= \hash( 'sha1', $tpl );
 	
-	if ( isset( $parsed[ $key ] ) ) {
+	if ( isset( $parsed[$key] ) ) {
 		return $parsed[$key];
 	}
 	
-	\preg_match_all( getRenderRegex(), $tpl, $matches );
 	$groups	= [];
+	\preg_match_all( getRenderRegex(), $tpl, $matches );
+	if ( empty( $matches ) ) {
+		$parsed[$key] = $groups;
+		return $groups;
+	}
 	
 	$rii = config( 'render_idx_item', \RENDER_IDX_ITEM, 'int' );
 	$ris = config( 'render_idx_skip', \RENDER_IDX_SKIP, 'int' );
@@ -650,15 +679,40 @@ function parseRender( string $tpl ) : array {
 }
 
 /**
- *  TODO: Function discovery in templates
+ *  Discover functions inside templates with placeholders and send them hook
+ *  
+ *  @param string	$tpl		Raw render template
+ *  @param array	$input		Placeholder replacement values
+ *  @param array	$place		Original placeholders in the template
+ *  @return array
  */
-/*
-function processTemplate( string $tpl ) {
+function processTemplate( string $tpl, array $input, array $place ) {
 	$groups = parseRender( $tpl );
 	
-	
+	foreach ( $groups as $k => $v ) {
+		hook( [ 'templatefunction', 
+			[
+				'template'	=> $tpl, 
+				'input'		=> $input,
+				'placeholders'	=> $place,
+				'function'	=> $k,
+				'parameters'	=> $v 
+			] 
+		] );
+	}
 }
-*/
+
+/**
+ *  Template render event handler
+ */
+function renderTemplate( string $event, array $hook, array $params ) {
+	processTemplate( 
+		$hook['template'] ?? '',
+		$hook['input' ] ?? [],
+		$hook['placeholders'] ?? []
+	);
+}
+
 
 
 /**
@@ -1300,3 +1354,4 @@ function checkRenderConfig( string $event, array $hook, array $params ) {
 
 // Check configuration
 hook( [ 'checkconfig',	'checkRenderConfig' ] );
+hook( [ 'templaterender',	'renderTemplate' ] );
