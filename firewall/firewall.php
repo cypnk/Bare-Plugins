@@ -1029,7 +1029,7 @@ function fw_botCheck() {
 	}
 	
 	// Reserved range?
-	$skip	= ( bool ) config( 'skip_local', \SKIP_LOCAL, 'int' );
+	$skip	= config( 'skip_local', \SKIP_LOCAL, 'bool' );
 	if ( !$skip ) {
 		if ( fw_inSubnet( $ip, $localip ) ) {
 			return true;
@@ -1037,7 +1037,7 @@ function fw_botCheck() {
 	}
 	
 	// Continue checking?
-	$fws	= ( bool ) config( 'firewall_ip_bots', \FIREWALL_IP_BOTS, 'int' );
+	$fws	= config( 'firewall_ip_bots', \FIREWALL_IP_BOTS, 'bool' );
 	if ( !$fws ) {
 		return false;
 	}
@@ -1271,7 +1271,8 @@ function fw_sanityCheck() {
 }
 
 function fw_insertLog( string $reason = '' ) {
-	if ( !\FIREWALL_DB_LOG ) {
+	$logok	= config( 'firewall_db_log', \FIREWALL_DB_LOG, 'bool' );
+	if ( !$logok ) {
 		return;
 	}
 	
