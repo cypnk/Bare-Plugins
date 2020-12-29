@@ -19,7 +19,7 @@ define( 'TEMPLATES',	PLUGINS . 'templates/files/' );
  */
 function loadTemplates( string $event, array $hook, array $params ) {
 	$tpl = config( 'templates', [] );
-	if ( empty( $tpl ) || \!is_array( $tpl ) ) {
+	if ( empty( $tpl ) || !\is_array( $tpl ) ) {
 		return \array_merge( $hook, $params );
 	}
 	
