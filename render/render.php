@@ -1294,7 +1294,7 @@ function breadcrumbs(
  */
 function checkRenderConfig( string $event, array $hook, array $params ) {
 	$filter	= [
-		'render_max_dpth'	=> [
+		'render_max_depth'	=> [
 			'filter'	=> \FILTER_VALIDATE_INT,
 			'options'	=> [
 				'min_range'	=> 1,
