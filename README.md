@@ -12,4 +12,5 @@ The following plugins are ready to install:
 
 These are still under development and will be non-functional and/or contain bugs:
 - [captcha](https://github.com/cypnk/Bare-Plugins/tree/master/captcha): A text on image generator for form field validation, this is not a standalone plugin
+- [membership](https://github.com/cypnk/Bare-Plugins/tree/master/membership): A user login and registration helper for use with other plugins
 - [editor](https://github.com/cypnk/Bare-Plugins/tree/master/editor): A helper to quickly create new posts or modify existing ones
