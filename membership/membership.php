@@ -10,8 +10,30 @@ if ( !defined( 'PATH' ) ) { die(); }
  *  
  *  This plugin requires 'allow_post' to be set to 1 (I.E. Enabled)
  *  
- *  Add this plugin to 'plugins_enabled' after the render plugin
+ *  Important: 
+ *  After setting the admin username and password, add this plugin to 
+ *  'plugins_enabled' after the render plugin
  */
+
+/**
+ *  Note: The following two settings cannot be set in config.json
+ *  Only used for first run and will be ignored after user database creation
+ *  
+ *  Change the password again after logging in as a precaution
+ */
+define( 'MEMBER_ADMIN_USER',	'' );
+define( 'MEMBER_ADMIN_PASS',	'' );
+
+
+/**
+ *  Standard settings
+ */
+
+// Enable new member registrations
+define( 'MEMBER_REGISTER',	1 );
+
+// Enable logins for existing members
+define( 'MEMBER_LOGIN',		1 );
 
 // Maximum username length
 define( 'MEMBER_MAX_USER',	180 );
@@ -32,12 +54,11 @@ define( 'MEMBER_ATTEMPTS',	5 );
 // WARNING: Altering the users database may cause all users to be deleted
 define( 'MEMBER_DATA',		CACHE . 'users.db' );
 
-/**
- *  Important: These settings cannot be set in config.json
- *  Only used for first run and will be ignored after user database creation
- */
-define( 'MEMBER_ADMIN',		'' );
-define( 'MEMBER_ADMIN_PASS',	'' );
+// Disallowed usernames (one per line or add to 'member_blacklist' in config.json)
+define( 'MEMBER_BLACKLIST',	<<<BLACK
+
+BLACK
+);
 
 
 /**
@@ -953,8 +974,23 @@ function loginBuffer() {
 	}
 }
 
-
-
+/**
+ *  Check blacklist for username
+ *  
+ *  @param string	$name		Suspect username
+ *  @return bool
+ */
+function checkUser( string $name ) : bool {
+	static $users; 
+	if ( !isset( $users ) ) {
+		$banned	= config( 'member_blacklist', \MEMBER_BLACKLIST );
+		$users	= \is_array( $banned ) ? 
+				$banned : 
+				lineSettings( $banned, -1, 'title' );
+	}
+	
+	return \in_array( $name, $banned );
+}
 
 /**
  *  End current session
@@ -1077,33 +1113,101 @@ function memberDBCreated( string $event, array $hook, array $params ) {
 	
 	// New user database was created
 	if ( 0 == \strcmp( $params['dbname'], \MEMBER_DATA ) ) {
-		// TODO: Add admin user
+		$user	= title( \MEMBER_ADMIN_USER );
+		
+		if ( 
+			empty( $user ) ||
+			empty( \MEMBER_ADMIN_PASS )
+		) {
+			logError( 'Membership: Default admin user and/or password not set' );
+			return;
+		}
+		
+		$id	= 
+		dataExec( 
+			"INSERT INTO users ( username, password ) 
+				VALUES ( :user, :pass );", 
+			[ 
+				':user' => $user,
+				':pass'	=> hashPassword( \MEMBER_ADMIN_PASS )
+			], 
+			'insert', 
+			\MEMBER_DATA 
+		);
+		
+		if ( empty( $id ) ) {
+			logError( 'Membership: Error creating admin user' );
+		}
+	}
+}
+
+function memberFormStatus( $status ) {
+	switch( $status ) {
+		case FORM_STATUS_INVALID:
+		case FORM_STATUS_EXPIRED:
+			visitorError( 403, 'Expired' );
+			sendError( 403, errorLang( "expired", \MSG_EXPIRED ) );
+		
+		case FORM_STATUS_FLOOD:
+			visitorError( 429, 'Flood' );
+			sendError( 429, errorLang( "toomany", \MSG_TOOMANY ) );
 	}
 }
 
 // TODO: Build login form
 function memberLoginRoute( string $event, array $hook, array $params ) {
-	loginBuffer();
+	$reg = config( 'member_login', \MEMBER_LOGIN, 'int' );
+	if ( !$reg ) {
+		visitorError( 404, 'Membership: Login disabled' );
+		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+	}
+	
+	send( 200, 'Login page' );
 }
 
 // TODO: Process sent login
 function memberLoginProcess( string $event, array $hook, array $params ) {
+	$reg = config( 'member_login', \MEMBER_LOGIN, 'bool' );
+	if ( !$reg ) {
+		visitorError( 404, 'Membership: Login disabled' );
+		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+	}
+	
 	loginBuffer();
 	
 	$status	= \FORM_STATUS_INVALID;
 	$form	= loginForm( $status );
+	
+	memberFormStatus( $status );
+	processLogin( $form, $status );
 }
 
 // TODO: Build register form
 function memberRegisterRoute( string $event, array $hook, array $params ) {
+	$reg = config( 'member_register', \MEMBER_REGISTER, 'bool' );
+	if ( !$reg ) {
+		visitorError( 404, 'Membership: Registration disabled' );
+		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+	}
 	
+	send( 200, 'Register page' );
 }
 
 // TODO: Process sent registration
 function memberRegisterProcess( string $event, array $hook, array $params ) {
+	$reg = config( 'member_register', \MEMBER_REGISTER, 'bool' );
+	if ( !$reg ) {
+		visitorError( 404, 'Membership: Registration disabled' );
+		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+	}
+	
+	loginBuffer();
+	
 	$status	= \FORM_STATUS_INVALID;
 	$form	= registerForm( $status );
 	
+	memberFormStatus( $status );
+	processRegister( $form )
 }
 
 
