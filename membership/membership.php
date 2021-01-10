@@ -405,7 +405,7 @@ function formatAuthUser( array $user ) : array {
 		'auth'		=> $user['auth'] ?? ''
 	];
 }
-	
+
 /**
  *  Check user authentication session
  *  
@@ -506,7 +506,7 @@ function endAuth() {
 /**
  *  Login path redirect helper
  *  
- *  @param string	$redir		Relative path to prepend login
+ *  @param string	$redir		Relative path to append to login
  */
 function sendLogin( string $redir = '' ) {
 	$path = eventRoutePrefix( 'memberlogin', 'login' ) . '/';
@@ -765,16 +765,35 @@ function changePassForm( int &$status ) : array {
  *  Auth helper. Redirect to login if user isn't already logged in
  *  
  *  @param array	$user	Authenticated user information
+ *  @param string	$redir	Redirect path after login
  */
-function checkLogin( array &$user ) {
+function checkLogin( array &$user, string $redir = 'profile' ) {
 	// Get user profile data first
 	$user	= authUser();
 	if ( empty( $user ) ) {
 		// Send to login
-		sendLogin( 'profile' );
+		sendLogin( $redir );
 	}
 }
 
+/**
+ *  Check elevated user level
+ *  
+ *  @param int		$level	Minimum status level
+ *  @param string	$redir	Redirect path after login
+ *  @return array
+ */
+function checkElevated( int $level, string $redir ) {
+	$user = [];
+	checkLogin( $user, $redir );
+	
+	// Send denied if minimum level not met
+	if ( $user['status'] <= $level ) {
+		sendDenied();
+	}
+	
+	return $user;
+}
 
 
 /**
@@ -1145,8 +1164,7 @@ function memberFormStatus( $status ) {
 	switch( $status ) {
 		case FORM_STATUS_INVALID:
 		case FORM_STATUS_EXPIRED:
-			visitorError( 403, 'Expired' );
-			sendError( 403, errorLang( "expired", \MSG_EXPIRED ) );
+			sendDenied( 'Expired', 'expired', \MSG_EXPIRED );
 		
 		case FORM_STATUS_FLOOD:
 			visitorError( 429, 'Flood' );
@@ -1158,10 +1176,10 @@ function memberFormStatus( $status ) {
 function memberLoginRoute( string $event, array $hook, array $params ) {
 	$reg = config( 'member_login', \MEMBER_LOGIN, 'int' );
 	if ( !$reg ) {
-		visitorError( 404, 'Membership: Login disabled' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound( 'Membership: Login disabled' );
 	}
 	
+	shutdown( 'cleanup' );
 	send( 200, 'Login page' );
 }
 
@@ -1169,8 +1187,7 @@ function memberLoginRoute( string $event, array $hook, array $params ) {
 function memberLoginProcess( string $event, array $hook, array $params ) {
 	$reg = config( 'member_login', \MEMBER_LOGIN, 'bool' );
 	if ( !$reg ) {
-		visitorError( 404, 'Membership: Login disabled' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound( 'Membership: Login disabled' );
 	}
 	
 	loginBuffer();
@@ -1186,10 +1203,10 @@ function memberLoginProcess( string $event, array $hook, array $params ) {
 function memberRegisterRoute( string $event, array $hook, array $params ) {
 	$reg = config( 'member_register', \MEMBER_REGISTER, 'bool' );
 	if ( !$reg ) {
-		visitorError( 404, 'Membership: Registration disabled' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound( 'Membership: Registration disabled' );
 	}
 	
+	shutdown( 'cleanup' );
 	send( 200, 'Register page' );
 }
 
@@ -1197,8 +1214,7 @@ function memberRegisterRoute( string $event, array $hook, array $params ) {
 function memberRegisterProcess( string $event, array $hook, array $params ) {
 	$reg = config( 'member_register', \MEMBER_REGISTER, 'bool' );
 	if ( !$reg ) {
-		visitorError( 404, 'Membership: Registration disabled' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound( 'Membership: Registration disabled' );
 	}
 	
 	loginBuffer();
