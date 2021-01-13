@@ -6,13 +6,13 @@ if ( !defined( 'PATH' ) ) { die(); }
 /**
  *  Bare Membership: This plugin lets Bare have registered users for various 
  *  roles such as commenting and managing (via another plugin). This plugin 
- *  depends on the render plugin
+ *  depends on the render and moderation plugins
  *  
  *  This plugin requires 'allow_post' to be set to 1 (I.E. Enabled)
  *  
  *  Important: 
  *  After setting the admin username and password, add this plugin to 
- *  'plugins_enabled' after the render plugin
+ *  'plugins_enabled' after the render and moderation plugins
  */
 
 /**
@@ -388,6 +388,8 @@ CREATE UNIQUE INDEX idx_user_role ON
 
 SQL
 );
+
+
 
 
 /**
@@ -1037,6 +1039,15 @@ function processLogin( array $data, int &$status ) {
 		sendError( 403, errorLang( 
 			'loginfail', \MSG_LOGINFAIL 
 		) );
+		
+		// Banned or suspended user check
+		$stored = exactFilter( $data['username'], 'username' );
+		if ( !empty( $stored ) ) {
+			// TODO: Check duration and filter for banned user
+			sendError( 403, errorLang( 
+				'loginfail', \MSG_LOGINFAIL 
+			) );
+		}
 	}
 	
 	$status = \AUTH_STATUS_FAILED;
@@ -1081,6 +1092,15 @@ function processRegister( array $data ) {
 	
 	// Check for banned username
 	if ( checkUser( $data['username'] ) ) {
+		sendError( 
+			401, 
+			errorLang( 'nameexists', \MSG_USER_EXISTS ) 
+		);
+	}
+	
+	// Banned or suspended username
+	$stored = exactFilter( $data['username'], 'username' );
+	if ( !empty( $stored ) ) {
 		sendError( 
 			401, 
 			errorLang( 'nameexists', \MSG_USER_EXISTS ) 
