@@ -22,24 +22,54 @@ CREATE TABLE filters(
 	-- Filter action
 	response INTEGER NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	duration INTEGER DEFAULT 0
+	duration INTEGER DEFAULT 0,
+	expires DATETIME DEFAULT NULL
 );-- --
 
 CREATE UNIQUE INDEX idx_filter_term ON filters( term, label );-- --
 CREATE INDEX idx_filter_label ON filters( label );-- --
 CREATE INDEX idx_filter_response ON filters( response );-- --
-CREATE INDEX idx_filter_duration ON filters( duration );-- --
+CREATE INDEX idx_filter_expires ON filters( expires );-- --
 
 -- Filter searching
 CREATE VIRTUAL TABLE filter_search 
 	USING fts4( term, tokenize=unicode61 );-- --
-
 
 CREATE TRIGGER filter_insert AFTER INSERT ON filters FOR EACH ROW 
 BEGIN
 	-- Create search data
 	INSERT INTO filter_search( docid, term ) 
 		VALUES ( NEW.id, NEW.term );
+	
+END;-- --
+
+-- Calculate expiration if duration was set
+CREATE TRIGGER filter_expiration AFTER INSERT ON filters FOR EACH ROW
+WHEN NEW.duration > 0 
+BEGIN 
+	-- Generate expiration
+	UPDATE filters SET 
+		expires = datetime( 
+			( strftime( '%s','now' ) + NEW.duration ), 
+			'unixepoch' 
+		) WHERE rowid = NEW.rowid;
+	
+	-- Clear expired filters
+	DELETE FROM filters WHERE 
+		strftime( '%s', expires ) < 
+		strftime( '%s', created );
+END;-- --
+
+-- Change expiration period when duration was modified
+CREATE TRIGGER filter_duration AFTER UPDATE ON filters FOR EACH ROW 
+WHEN NEW.duration <> 0
+BEGIN
+	-- Change expiration
+	UPDATE filters 
+		SET expires = datetime( 
+			( strftime( '%s','now' ) + NEW.duration ), 
+			'unixepoch' 
+		) WHERE rowid = NEW.rowid;
 END;-- --
 
 CREATE TRIGGER filter_update AFTER UPDATE ON users FOR EACH ROW
@@ -163,7 +193,115 @@ function ip6cidr( $ip, $range ) : bool {
 	return ( $ib === $nb );
 }
 
+/**
+ *  Add a filter action if it doesn't already exist
+ *  
+ *  @param string	$term		Filter search term
+ *  @param string	$label		Filter type
+ *  @param int		$response	Action response to filter match
+ *  @param int		$duration	Duration in seconds or 0 for no limit
+ *  @return int
+ */
+function addFilter(
+	string		$term,
+	string		$label,
+	int		$response,
+	int		$duration	= -1
+) : int {
+	return
+	setInsert( 
+		"INSERT OR IGNORE INTO filters ( 
+			term, label, response, duration
+		) VALUES ( :term, :label, :response, :duration );",
+		[ 
+			':term'		=> $term, 
+			':label'	=> $label,
+			
+			// Limit to available responses
+			':response'	=> intRange( $response, 0, 13 ),
+			':duration'	=> $duration
+		], 
+		\MODERATION_DATA 
+	);
+}
 
+/**
+ *  @brief Brief description
+ *  
+ *  @param int		$id		Filter identifier
+ *  @param string	$term		Filter search term
+ *  @param string	$label		Filter type
+ *  @param int		$response	Action response to filter match
+ *  @param int		$duration	Duration in seconds or 0 for no limit
+ *  @return bool True on success
+ */
+function updateFilter(
+	int		$id,
+	string		$term,
+	string		$label,
+	int		$response,
+	int		$duration	= -1
+) : bool {
+	return 
+	setUpdate(
+		"UPDATE filters SET 
+			term = :term, label = :label, response = :response, 
+			duration = :duration WHERE id = :id;"
+		[ 
+			':term'		=> $term, 
+			':label'	=> $label,
+			':response'	=> intRange( $response, 0, 13 ),
+			':duration'	=> $duration
+		], \MODERATION_DATA );
+	);
+}
+
+/**
+ *  Find a relative matching text within a larger body such as paragraphs
+ *  
+ *  @param string	$term		Search phrase
+ *  @param string	$label		Filter type
+ *  @return array
+ */
+function containsFilter( string $term, string $label ) : array {
+	$sql		= 
+	"SELECT f.id AS id, 
+		f.term AS term, 
+		f.response AS response, 
+		f.duration AS duration, 
+		f.created AS created 
+			FROM filters f 
+			JOIN filter_search s ON f.id = s.rowid 
+				WHERE s.term MATCH :term AND f.label = :label;";
+	return 
+	getResults( $sql, [ 
+		':term'		=> $term,
+		':label'	=> $label
+	], \MODERATION_DATA );
+}
+
+/**
+ *  Find exact matching text such as for usernames or IP addresses
+ *  
+ *  @param string	$term		Search phrase
+ *  @param string	$label		Filter type
+ *  @return array
+ */
+function exactFilter( string $term, string $label ) : array {
+	$sql		= 
+	"SELECT f.id AS id, 
+		f.term AS term, 
+		f.response AS response, 
+		f.duration AS duration, 
+		f.created AS created 
+			FROM filters WHERE term = :term AND label = :label;";
+	
+	return 
+	getResults( $sql, [ 
+		':term'		=> $term,
+		':label'	=> $label
+	], \MODERATION_DATA );
+}
 
 
 
