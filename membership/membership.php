@@ -74,8 +74,24 @@ define( 'MSG_USER_EXISTS',	'A user by that name already exists.' );
 // Login throttle
 define( 'MSG_LOGINWAIT',	'Please wait before attempting to login again.' );
 
+// Username length or missing
+define( 'MSG_USER_NAMEERR',	'Username is invalid.' );
+
+// Password too hort
+define( 'MSG_PASS_SHORT',	'Password is too short.' );
+
+// Password repeat for registration
+define( 'MSG_PASS_REPEAT',	'Password must be repeated.' );
+
+// Passwords don't match for registration
+define( 'MSG_PASS_MATCH',	'Repeated passwords do not match.' );
+
+// Login credentials invalid
+define( 'MSG_EMPTYCRED',	'Login credentials invalid. Please try again.' );
+
 // Login fail
 define( 'MSG_LOGINFAIL',	'Login unsuccssful. Please try again.' );
+
 
 
 
@@ -582,10 +598,96 @@ function passNeedsRehash(
 
 
 /**
- *  User login form
+ *  Form validation
  */
-function loginForm( int &$status ) : array {
-	$filter = [
+
+/**
+ *  Preliminary field filter from raw user input to check for empty etc...
+ *  
+ *  @param mixed	$input		Raw user input
+ *  @return string
+ */
+function memberPrefilter( $input ) : string {
+	if ( \is_array( $input ) ) {
+		return '';
+	}
+	
+	return trim( unifySpaces( ( string ) $input ) );
+}
+
+/**
+ *  Bio/profile filter helper
+ *  
+ *  @param mixed	$bio Raw bio data entered by the user
+ *  @return string
+ */
+function memberBio( $bio ) : string {
+	if ( \is_array( $bio ) ) {
+		return '';
+	}
+	
+	return entities( pacify( $bio ) );
+}
+
+/**
+ *  Check form processing status and send appropriate error on failure (exits)
+ *  
+ *  @param int		$status		Form validation status
+ */
+function memberFormStatus( int $status ) {
+	switch( $status ) {
+		case FORM_STATUS_INVALID:
+		case FORM_STATUS_EXPIRED:
+			sendDenied( 'Expired', 'expired', \MSG_EXPIRED );
+		
+		case FORM_STATUS_FLOOD:
+			visitorError( 429, 'Flood' );
+			sendError( 429, errorLang( "toomany", \MSG_TOOMANY ) );
+	}
+}
+
+/**
+ *  Detailed credential validation
+ *  
+ *  @param array	$data		Form data sent by the user
+ *  @return array Error messages
+ */
+function memberCredStatus( array $data ) : array {
+	// Possible spaces only password
+	$tpass = memberPrefilter( $data['password'] ?? '' );
+	
+	if ( empty( $data['username'] ) || empty( $tpass ) ) {
+		return [ errorLang( 'member_err_emptycred', \MSG_EMPTYCRED ) ];
+	}
+	
+	$umin	= config( 'member_min_user', \MEMBER_MIN_USER, 'int' );
+	$umax	= config( 'member_max_user', \MEMBER_MAX_USER, 'int' );
+	$pmin	= config( 'member_min_pass' \MEMBER_MIN_PASS, 'int' );
+	
+	$usent	= strsize( $data['username'] );
+	$psent	= strsize( $tpass ) ;
+	
+	$msg	= [];
+	if ( $sent > $umin || $usent < $umin ) {
+		$msg[] = errorLang( 'member_err_user_nameerr', \MSG_USER_NAMEERR );
+	}
+	
+	if ( $psent < $pmin ) {
+		$msg[]	= errorLang( 'member_err_pass_short', \MSG_PASS_SHORT );
+	}
+	
+	return $msg;
+}
+
+/**
+ *  User login form
+ *  
+ *  @param int		$status		Form validation status
+ *  @param array	$msg		Any error messages sent back
+ *  @param string	$user		Login form sent with specific username
+ */
+function loginForm( int &$status, array &$msg, string $user = '' ) : array {
+	static $filter = [
 		'nonce'		=> [
 			'filter'	=> 
 				\FILTER_SANITIZE_FULL_SPECIAL_CHARS,
@@ -598,7 +700,7 @@ function loginForm( int &$status ) : array {
 		],
 		'username'	=> [
 			'filter'	=> \FILTER_CALLBACK,
-			'options'	=> 'title'
+			'options'	=> 'memberPrefilter'
 		],
 		
 		// Passwords handled differently from other inputs
@@ -615,19 +717,39 @@ function loginForm( int &$status ) : array {
 		]
 	];
 	
-	$data	= \filter_input_array( \INPUT_POST, $filter );
-	$status = verifyNoncePair( $data['token'], $data['nonce'] );
+	// Form fields being verified
+	$fields	= [ 
+		'nonce', 
+		'token', 
+		'username=' . $user, 
+		'password',  
+		'rem' 
+	];
+	
+	// Validate form status
+	$status = 
+	validateForm( 'loginform', false, true, $fields );
+	
 	if ( $status == \FORM_STATUS_VALID ) {
-		if ( 
-			empty( $data['username'] ) ||
-			empty( $data['password'] ) 
-		) {
+		// Raw user input
+		$data	= \filter_input_array( \INPUT_POST, $filter );
+		
+		$msg = memberCredStatus( $data );
+		if ( !empty( $msg ) ) {
 			return [];
 		}
 		
+		// Login form hook
+		hook( [ 'loginform', [ 
+			'input'		=> $data,
+			'fields'	=> $fields,
+			'messages'	=> $msg,
+			'formstatus'	=> $status
+		] ] );
+		
 		return [ 
 			'username'	=> $data['username'],
-			'password'	=> $data['password'],
+			'password'	=> ( string ) $data['password'],
 			'rem'		=> $data['rem']
 		];
 	}
@@ -637,14 +759,18 @@ function loginForm( int &$status ) : array {
 
 /**
  *  New user registration form
+ *  
+ *  @param int		$status		Form validation status
+ *  @param array	$msg		Any error messages sent back
+ *  @return array
  */
-function registerForm( int &$status ) : array {
-	$filter = [
+function registerForm( int &$status, array &$msg ) : array {
+	static $filter = [
 		'nonce'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'token'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'username'	=> [
 			'filter'	=> \FILTER_CALLBACK,
-			'options'	=> 'title'
+			'options'	=> 'memberPrefilter'
 		],
 		
 		// Passwords handled differently from other inputs
@@ -662,28 +788,59 @@ function registerForm( int &$status ) : array {
 		]
 	];
 	
-	$data	= \filter_input_array( \INPUT_POST, $filter );
-	$status = verifyNoncePair( $data['token'], $data['nonce'] );
+	static $fields	= [ 
+		'nonce', 
+		'token', 
+		'username=', 
+		'password', 
+		'password2', 
+		'rem' 
+	];
+	
+	$status = 
+	validateForm( 'registerform', false, true, $fields );
+	
 	if ( $status == \FORM_STATUS_VALID ) {
-		if (
-			empty( $data['username'] ) ||
-			empty( $data['password'] ) || 
-			empty( $data['password2'] ) 
-		) {
-			return [];
+		$data	= \filter_input_array( \INPUT_POST, $filter );
+		
+		// Check base credentials
+		$msg[]	= memberCredStatus( $data );
+		
+		// Repeat password
+		$trp2	= memberPrefilter( $data['password2'] );
+		if ( empty( $trp2 ) ) {
+			$msg[] = 
+			errorLang( 'member_err_pass_repeat', \MSG_PASS_REPEAT );
+			
+		} else {
+			$data['password'] = ( string ) $data['password'];
+			
+			if ( 0 !== \strcmp( 
+				$data['password'], 
+				( string ) $data['password2'] ) ) {
+				$msg[] = 
+				errorLang( 
+					'member_err_pass_match', 
+					\MSG_PASS_MATCH 
+				);
+			}
 		}
 		
-		// Compare password inputs
-		if ( \strcmp( 
-			$data['password'], 
-			$data['password2'] ) !== 0 
-		) {
+		// Register form hook
+		hook( [ 'registerform', [ 
+			'input'		=> $data,
+			'fields'	=> $fields,
+			'messages'	=> $msg,
+			'formstatus'	=> $status
+		] ] );
+		
+		if ( !empty( $msg ) ) {
 			return [];
 		}
 		
 		return [ 
 			'username'	=> $data['username'],
-			'password'	=> $data['password'],
+			'password'	=> ( string ) $data['password'],
 			'rem'		=> $data['rem']
 		];
 	}
@@ -691,11 +848,12 @@ function registerForm( int &$status ) : array {
 	return [];
 }
 
+
 /**
  *  Change existing user display profile
  */
-function profileForm( int &$status ) : array {
-	$filter = [
+function profileForm( int &$status, int $id ) : array {
+	string $filter = [
 		'nonce'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'token'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'id'		=> [
@@ -715,13 +873,32 @@ function profileForm( int &$status ) : array {
 		// Filter on output
 		'bio'		=> [
 			'filter'	=> \FILTER_CALLBACK,
-			'options'	=> 'pacify'
+			'options'	=> 'memberBio'
 		]
 	];
 	
-	$data	= \filter_input_array( \INPUT_POST, $filter );
-	$status = verifyNoncePair( $data['token'], $data['nonce'] );
+	static $fields	= [ 
+		'nonce', 
+		'token', 
+		'id=' . $id,
+		'display', 
+		'bio' 
+	];
+	
+	$status = 
+	validateForm( 'profileform', false, true, $fields );
+	
 	if ( $status == FORM_STATUS_VALID ) {
+		$data	= \filter_input_array( \INPUT_POST, $filter );
+		
+		// TODO: Profile data validation
+		
+		// Register form hook
+		hook( [ 'profileform', [ 
+			'input'		=> $data,
+			'fields'	=> $fields,
+			'formstatus'	=> $status
+		] ] );
 		return $data;
 	}
 	return [];
@@ -730,8 +907,8 @@ function profileForm( int &$status ) : array {
 /**
  *  Change existing user password (requires old password)
  */
-function changePassForm( int &$status ) : array {
-	$filter = [
+function changePassForm( int &$status, int $id ) : array {
+	static $filter = [
 		'nonce'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'token'		=> \FILTER_SANITIZE_FULL_SPECIAL_CHARS,
 		'id'		=> [
@@ -747,16 +924,27 @@ function changePassForm( int &$status ) : array {
 		'new_password'	=> \FILTER_UNSAFE_RAW
 	];
 	
-	$data	= \filter_input_array( \INPUT_POST, $filter );
+	$fields	= [ 
+		'nonce', 
+		'token', 
+		'id=' . $id
+	];
+	
+	$status = 
+	validateForm( 'passwordform', false, true, $fields );
+	
 	$status	= verifyNoncePair( $data['token'], $data['nonce'] );
 	if ( $status == FORM_STATUS_VALID ) {
-		if (
-			empty( $data['old_password'] ) || 
-			empty( $data['new_password'] ) 
-		) {
+		$data	= \filter_input_array( \INPUT_POST, $filter );
+		$trold	= memberPrefilter( $data['old_password'] ?? '' );
+		$trnew	= memberPrefilter( $data['new_password'] ?? '' );
+		
+		if ( empty( $trold ) || empty( $trnew ) ) {
 			return [];
 		}
 		
+		$data['old_password'] = ( string ) $data['old_password'];
+		$data['new_password'] = ( string ) $data['new_password'];
 		return $data;
 	}
 	return [];
@@ -987,7 +1175,7 @@ function loginBuffer() {
 	$cur	= \abs( time() - $tdata[1] );
 	if ( $cur  < $delay && $tdata[0] > $atm ) {
 		sendError( 429, errorLang( 
-			'loginwait', \MSG_LOGINWAIT 
+			'member_loginwait', \MSG_LOGINWAIT 
 		) );
 	} elseif( $cur > $delay ) {
 		// Reset
@@ -1037,7 +1225,7 @@ function processLogin( array $data, int &$status ) {
 	// Check for banned username
 	if ( checkUser( $data['username'] ) ) {
 		sendError( 403, errorLang( 
-			'loginfail', \MSG_LOGINFAIL 
+			'member_loginfail', \MSG_LOGINFAIL 
 		) );
 		
 		// Banned or suspended user check
@@ -1045,7 +1233,7 @@ function processLogin( array $data, int &$status ) {
 		if ( !empty( $stored ) ) {
 			// TODO: Check duration and filter for banned user
 			sendError( 403, errorLang( 
-				'loginfail', \MSG_LOGINFAIL 
+				'member_loginfail', \MSG_LOGINFAIL 
 			) );
 		}
 	}
@@ -1078,7 +1266,7 @@ function processLogin( array $data, int &$status ) {
 			// Fall through to login fail
 		default:
 			sendError( 403, errorLang( 
-				'loginfail', \MSG_LOGINFAIL 
+				'member_loginfail', \MSG_LOGINFAIL 
 			) );
 			
 	}
@@ -1094,7 +1282,7 @@ function processRegister( array $data ) {
 	if ( checkUser( $data['username'] ) ) {
 		sendError( 
 			401, 
-			errorLang( 'nameexists', \MSG_USER_EXISTS ) 
+			errorLang( 'member_err_user_exists', \MSG_USER_EXISTS ) 
 		);
 	}
 	
@@ -1103,7 +1291,7 @@ function processRegister( array $data ) {
 	if ( !empty( $stored ) ) {
 		sendError( 
 			401, 
-			errorLang( 'nameexists', \MSG_USER_EXISTS ) 
+			errorLang( 'member_err_user_exists', \MSG_USER_EXISTS ) 
 		);
 	}
 	
@@ -1111,7 +1299,7 @@ function processRegister( array $data ) {
 	if ( !empty( $existing ) ) {
 		sendError( 
 			401, 
-			errorLang( 'nameexists', \MSG_USER_EXISTS ) 
+			errorLang( 'member_err_user_exists', \MSG_USER_EXISTS ) 
 		);
 	}
 	
@@ -1180,18 +1368,6 @@ function memberDBCreated( string $event, array $hook, array $params ) {
 	}
 }
 
-function memberFormStatus( $status ) {
-	switch( $status ) {
-		case FORM_STATUS_INVALID:
-		case FORM_STATUS_EXPIRED:
-			sendDenied( 'Expired', 'expired', \MSG_EXPIRED );
-		
-		case FORM_STATUS_FLOOD:
-			visitorError( 429, 'Flood' );
-			sendError( 429, errorLang( "toomany", \MSG_TOOMANY ) );
-	}
-}
-
 // TODO: Build login form
 function memberLoginRoute( string $event, array $hook, array $params ) {
 	$reg = config( 'member_login', \MEMBER_LOGIN, 'int' );
@@ -1213,9 +1389,18 @@ function memberLoginProcess( string $event, array $hook, array $params ) {
 	loginBuffer();
 	
 	$status	= \FORM_STATUS_INVALID;
-	$form	= loginForm( $status );
+	$msg	= [];
+	$form	= loginForm( $status, $msg );
 	
+	// Check form status
 	memberFormStatus( $status );
+	
+	// Check form data
+	if ( !empty( $msg ) ) {
+		// TODO: Fail with message
+	}
+	// TODO: Put through content filter
+	
 	processLogin( $form, $status );
 }
 
@@ -1240,9 +1425,17 @@ function memberRegisterProcess( string $event, array $hook, array $params ) {
 	loginBuffer();
 	
 	$status	= \FORM_STATUS_INVALID;
-	$form	= registerForm( $status );
+	$msg	= [];
+	$form	= registerForm( $status, $msg );
 	
 	memberFormStatus( $status );
+	
+	// Check form data
+	if ( !empty( $msg ) ) {
+		// TODO: Fail with message
+	}
+	// TODO: Put through content filter
+	
 	processRegister( $form )
 }
 
