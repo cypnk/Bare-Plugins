@@ -5,8 +5,11 @@ if ( !defined( 'PATH' ) ) { die(); }
 
 /**
  *  Bare Moderation: This is a user submitted content filter plugin
+ *  
+ *  Used for commenting, registration, and other user input siutations 
+ *  
+ *  This is not a standalone plugin
  */
-
 
 define( 'MODERATION_DATA',		CACHE . 'moderation.db' );
 
@@ -106,6 +109,10 @@ define( 'FILTER_HOLDBLOCKUIP',		12 );	// Hold, block user, block IP
 define( 'FILTER_DELBLOCKUIP',		13 );	// Delete, block user, block IP
 
 
+// Measurement precision (E.G. for quality checking );
+define( 'MOD_Q_PRECISION',			4 );
+
+
 /**
  *  See if the response calls for a block
  *  
@@ -194,6 +201,79 @@ function ip6cidr( $ip, $range ) : bool {
 }
 
 /**
+ *  Simple text evaluation for small blocks of text using only syntax and not substance or language
+ *  
+ *  @param string	$text		Raw text input
+ *  @return array
+ */
+function modEvaluate( string $text ) : array {
+	if ( empty( trim( $text ) ) ) {
+		return [];
+	}
+	
+	// Filtered text
+	$bn = bland( $text );
+	
+	// Filtered text without special unicode characters
+	$ns = bland( $text, true );
+	
+	// Total word count
+	$wc = wordcount( $bn );
+	
+	// Total unique terms
+	$uq = uniqueTerms( $bn );
+	
+	// Total text size
+	$bns = strsize( $bn );
+	
+	// Total characters
+	$tsc = \preg_split( '//', $bn, -1, \PREG_SPLIT_NO_EMPTY );
+	$tcc = count( $tsc );
+	
+	// Uppercase character count
+	$uss = count( 
+		// Uppercase chars only
+		\array_diff( 
+			// Total
+			$tsc,
+			
+			// Lowercase characters
+			\preg_split( '//', lowercase( $bn ), -1, \PREG_SPLIT_NO_EMPTY )
+		) 
+	);
+	
+	// Punctuation
+	$pnn = \preg_match_all( '/[[:punct:]]/', $bn );
+	
+	return [
+		// Total word count
+		'wordcount'	=> $wc,
+		
+		// Contains only ASCII?
+		'isascii'	=> isASCII( $bn ),
+		
+		// Original text to bland text size ratio
+		'texttobland'	=> division( strsize( $text ), $bns ),
+		
+		// Text size to text without tags ratio
+		'texttonotags'	=> division( $bns, strsize( \strip_tags( $text ) ) ),
+		
+		// Text to text without special characters or diacritics ratio
+		'texttotextns'	=> division( $bns, strsize( $ns ) ),
+		
+		// Total character count to uppercase character count ratio
+		'totaltoupper'	=> division( $tcc, $uss ),
+		
+		// Total word count to unique terms ratio
+		'termstounique'	=> division( $wc, count( $uq ) ),
+		
+		// Total character count to punctuation ratio
+		'totaltopunct'	=> $pnn ? division( $tcc, $pnn ) : 0
+		
+	];
+}
+
+/**
  *  Add a filter action if it doesn't already exist
  *  
  *  @param string	$term		Filter search term
@@ -251,7 +331,8 @@ function updateFilter(
 			':term'		=> $term, 
 			':label'	=> $label,
 			':response'	=> intRange( $response, 0, 13 ),
-			':duration'	=> $duration
+			':duration'	=> $duration,
+			':id'		=> $id
 		], \MODERATION_DATA );
 	);
 }
