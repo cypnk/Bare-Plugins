@@ -23,7 +23,7 @@ CREATE TABLE filters(
 	label TEXT NOT NULL COLLATE NOCASE,
 	
 	-- Filter action
-	response INTEGER NOT NULL DEFAULT 0,
+	response INTEGER NOT NULL DEFAULT -1,
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	duration INTEGER DEFAULT 0,
 	expires DATETIME DEFAULT NULL
@@ -93,6 +93,7 @@ SQL
  *  Filter behaviors
  *  Note: "user" in this context can be author names, login usernames or similar
  */
+define( 'FILTER_NOACTION',		-1 );	// No specific action specified
 define( 'FILTER_HOLD',			0 );	// Hold for review
 define( 'FILTER_DELETE',		1 );	// Delete outright					
 define( 'FILTER_HOLDSUSP',		2 );	// Hold, suspend user
@@ -199,6 +200,50 @@ function ip6cidr( $ip, $range ) : bool {
 	
 	return ( $ib === $nb );
 }
+
+/**
+ *  Check if the given IP address is in IP version 6 range
+ *  
+ *  @param string	$ip		Raw IP address
+ *  @return bool
+ */
+function isIPv6( string $ip ) : bool {
+	return 
+	\filter_var( 
+		$ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6
+	) ? true : false;
+}
+
+/**
+ *  Check if an IP address exists in given list and return action
+ *  
+ *  @param string	$ip		Raw IP address
+ *  @param array	$check		Pre-filter range from database
+ *  @param bool		$ipv6		Given IP is in IPv6 range
+ *  @return int
+ */
+function filteredIP( string $ip, array $check, bool $ipv6 = false ) : int {
+	$match = false;
+	foreach( $check as $c => $v ) {
+		// Exact match
+		if ( false === \strpos( $c, '/' ) ) {
+			if ( \strcmp( $c, $ip ) ) {
+				return ( int ) $v;
+			}
+		// Range match
+		} else {
+			$match = 
+			$ipv6 ? ip6cidr( $ip, $c ) : ip4cidr( $ip, $c );
+			if ( $match ) {
+				return ( int ) $v;
+			}
+		}
+	}
+	
+	return \FILTER_NOACTION;
+}
+
+
 
 /**
  *  Simple text evaluation for small blocks of text using only syntax and not substance or language
@@ -350,7 +395,8 @@ function containsFilter( string $term, string $label ) : array {
 		f.term AS term, 
 		f.response AS response, 
 		f.duration AS duration, 
-		f.created AS created 
+		f.created AS created, 
+		f.expires AS expires  
 			FROM filters f 
 			JOIN filter_search s ON f.id = s.rowid 
 				WHERE s.term MATCH :term AND f.label = :label;";
@@ -374,7 +420,8 @@ function exactFilter( string $term, string $label ) : array {
 		f.term AS term, 
 		f.response AS response, 
 		f.duration AS duration, 
-		f.created AS created 
+		f.created AS created, 
+		f.expires AS expires
 			FROM filters WHERE term = :term AND label = :label;";
 	
 	return 
@@ -384,5 +431,63 @@ function exactFilter( string $term, string $label ) : array {
 	], \MODERATION_DATA );
 }
 
+/**
+ *  Find a set of components that fit the filter
+ *  
+ *  @param array	$terms		Search phrases
+ *  @param string	$label		Filter type
+ *  @return array
+ */
+function rangeFilter( array $terms, string $label ) : array {
+	$params		= [];
+	$frag		= getInParam( $terms, $params );
+	$sql		= 
+	"SELECT f.id AS id, 
+		f.term AS term, 
+		f.response AS response, 
+		f.duration AS duration, 
+		f.created AS created, 
+		f.expires AS expires
+			FROM filters f 
+			JOIN filter_search s ON f.id = s.rowid 
+				WHERE s.term $frag AND f.label = :label;";
+	
+	$params		= \array_merge( $params, [ ':label' => $label ] );
+	return getResults( $sql, $params, \MODERATION_DATA );
+}
+
+/**
+ *  Check if current IP is in the filter list
+ *  
+ *  @param string	$ip
+ *  @return int
+ */
+function ipFilter( string $ip = null ) : int {
+	$ip	= $ip ?? getIP();
+	$ipv6	= isIPv6( $ip );
+	
+	// Break down range to components
+	$filter = 
+	rangeFilter( explode( $ipv6 ? '.' : ':', $ip ), 'ipaddress' );
+	
+	if ( empty( $filter ) ) {
+		return \FILTER_NOACTION;
+	}
+	
+	$t	= '';
+	$res 	= [];
+	
+	foreach ( $filter as $f ) {
+		// Ignore expired
+		if ( !checkPub( utc( $f['expires'] ?? 'now' ) ) ) {
+			continue;
+		}
+		
+		// TODO: Evalutate whole address or mark as range fragment
+		$res[$f['term']] = $f['response'];
+	}
+	
+	return filteredIP( $ip, $res, $ipv6 );
+}
 
 
