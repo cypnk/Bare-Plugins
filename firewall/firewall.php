@@ -858,7 +858,7 @@ function fw_uriCheck() {
 	];
 	
 	// Set as path?
-	return textNeedleSearch( $_SERVER['REQUEST_URI'], $uri_frags );
+	return textNeedleSearch( $_SERVER['REQUEST_URI'] ?? '', $uri_frags );
 }
 
 // Check browser and platform matches
@@ -1094,7 +1094,11 @@ function fw_browserCheck( $ua, $val ) {
 		return true;
 	}
 	
-	$pr	= getProtocol();
+	$pr	= $_SERVER['SERVER_PROTOCOL'] ?? '';
+	// No valid protocol
+	if ( empty( $pr ) ) {
+		return true;
+	}
 	
 	// Expect and HTTP/1.0 shouldn't go together
 	if (
@@ -1271,7 +1275,7 @@ function fw_sanityCheck() {
 }
 
 function fw_insertLog( string $reason = '' ) {
-	$logok	= config( 'firewall_db_log', \FIREWALL_DB_LOG, 'bool' );
+	$logok = config( 'firewall_db_log', \FIREWALL_DB_LOG, 'bool' );
 	if ( !$logok ) {
 		return;
 	}
@@ -1282,7 +1286,7 @@ function fw_insertLog( string $reason = '' ) {
 		':reason'	=> empty( $reason ) ? 'Unknown' : $reason,
 		':ip'		=> getIP(), 
 		':ua'		=> getUA(), 
-		':uri'		=> $_SERVER['REQUEST_URI'], 
+		':uri'		=> $_SERVER['REQUEST_URI'] ?? '', 
 		':method'	=> getMethod(), 
 		':headers'	=> \implode( "\n", httpHeaders() )
 	] );
