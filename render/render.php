@@ -659,7 +659,10 @@ function parseRender( string $tpl ) : array {
 	}
 	
 	$groups	= [];
-	\preg_match_all( getRenderRegex(), $tpl, $matches );
+	if ( !\preg_match_all( getRenderRegex(), $tpl, $matches ) ) {
+		return [];
+	}
+	
 	if ( empty( $matches ) ) {
 		$parsed[$key] = $groups;
 		return $groups;
