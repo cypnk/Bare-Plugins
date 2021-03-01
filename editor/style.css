@@ -268,6 +268,10 @@ form p label {
 	opacity: 1;
 }
 
+input {
+	transition: all 0.3s ease-out;
+}
+
 input, textarea, select, .btn {
 	border-bottom: .2rem solid #9E9E9E;
 	box-shadow: 0;
@@ -325,6 +329,7 @@ form.anim input[type="text"], form.anim input[type="password"], form.anim textar
 	height: 2.7rem;
 	min-height: 2.7rem;
 	resize: vertical;
+	transition: all 0.7s ease;
 }
 
 [data-feature="autoheight"]:focus {
