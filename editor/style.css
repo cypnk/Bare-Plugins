@@ -4,6 +4,7 @@
 	margin: 0;
 	padding: 0;
 	border: 0;
+	outline: none;
 	background: inherit;
 	line-height: inherit;
 	box-shadow: none;
@@ -267,8 +268,10 @@ form p label {
 	opacity: 1;
 }
 
-input, textarea, .btn {
+input, textarea, select, .btn {
 	border-bottom: .2rem solid #9E9E9E;
+	box-shadow: 0;
+	outline: none;
 }
 
 input[type="text"], input[type="password"], textarea {
@@ -324,7 +327,11 @@ form.anim input[type="text"], form.anim input[type="password"], form.anim textar
 	resize: vertical;
 }
 
-input:invalid:not(:placeholder-shown) ~ span.desc::after, textarea:invalid:not(:placeholder-shown) ~ span.desc::after {
+[data-feature="autoheight"]:focus {
+	min-height: 10rem;
+}
+
+input:invalid:not(:placeholder-shown) ~ span.desc::after, input:out-of-range + span.desc::after, textarea:invalid:not(:placeholder-shown) ~ span.desc::after {
 	content: attr(data-validation);
 }
 
