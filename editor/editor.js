@@ -372,11 +372,11 @@ function makeSlug( sx, v, m ) {
 }
 
 // Auto-adjust textarea height
-function resize( txt ) {
-	txt.style.resize	= 'none';
-	
+function autoHeight( txt ) {
 	// Reset
-	txt.style.height	= 'auto';
+	if ( txt.value != '' ) {
+		txt.style.height	= 'auto';
+	}
 	txt.style.height	= txt.scrollHeight + 3 + 'px';
 }
 
@@ -568,12 +568,23 @@ function canDrop( box, opts ) {
  */
 
 // Auto-adjust height
-function makeResizable( box ) {
+function makeAutoheight( box ) {
 	box.style.resize	= 'none';
-	resize( box );
+	if ( getAttr( box, 'origheight' ) == '' ) {
+		attr( box, 'origheight', box.style.height );
+	}
+	
+	autoHeight( box );
 	
 	listen( box, 'input, change, paste', function( e ) {
-		resize( this );
+		autoHeight( this );
+	}, false );
+	
+	listen( box, 'blur', function( e ) {
+		// Reset to original height if left unfilled
+		if ( this.value == '' ) {
+			this.style.height = getAttr( this, 'origheight' );
+		}
 	}, false );
 }
 
@@ -665,7 +676,7 @@ function findFeatures( box ) {
 		switch( p[0] ) {
 			
 			case 'autoheight':
-				makeResizable( box );
+				makeAutoheight( box );
 				break;
 			
 			case 'slug':
