@@ -146,15 +146,6 @@ function selection( el ) {
 	return s;
 }
 
-// Update cursor position
-function updateLastPos( box ) {
-	box.last_start	= box.selectionStart;
-	box.last_end	= box.selectionEnd;
-	
-	// Check for selection info
-	checkSelect( box );
-}
-
 // Move cursor to position
 function moveTo( el, s, e ) {
 	el.selectionStart	= s;
@@ -170,10 +161,13 @@ function moveEnd( el, txt ) {
 	moveTo( el, l, l );
 }
 
-// Update global cursor position
+// Update cursor position
 function updateLastPos( el ) {
 	attr( el, 'data-selectionStart', el.selectionStart );
 	attr( el, 'data-selectionEnd', el.selectionEnd );
+	
+	// Check for selection info
+	checkSelect( box );
 }
 
 // Insert character at cursor position
