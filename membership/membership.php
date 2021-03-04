@@ -133,7 +133,7 @@ CREATE TABLE users (
 	bio TEXT DEFAULT NULL COLLATE NOCASE,
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	settings TEXT NOT NULL DEFAULT '{}',
+	settings TEXT NOT NULL DEFAULT '{}' COLLATE NOCASE,
 	status INTEGER NOT NULL DEFAULT 0
 );-- --
 CREATE UNIQUE INDEX idx_username ON users( username );-- --
@@ -168,7 +168,7 @@ CREATE TABLE id_providers(
 	sort_order INTEGER NOT NULL DEFAULT 0,
 	
 	-- Serialized JSON
-	settings TEXT NOT NULL DEFAULT '{}'
+	settings TEXT NOT NULL DEFAULT '{}' COLLATE NOCASE
 );-- --
 CREATE UNIQUE INDEX idx_provider_label ON id_providers( label );-- --
 CREATE INDEX idx_provider_sort ON id_providers( sort_order ASC );-- --
@@ -375,7 +375,7 @@ CREATE TABLE role_privileges(
 	role_id INTEGER NOT NULL,
 	
 	-- Serialized JSON
-	settings TEXT NOT NULL DEFAULT '{}'
+	settings TEXT NOT NULL DEFAULT '{}' COLLATE NOCASE,
 	
 	CONSTRAINT fk_privilege_role 
 		FOREIGN KEY ( role_id ) 
@@ -400,7 +400,7 @@ CREATE TABLE user_roles(
 		ON DELETE CASCADE
 );-- --
 CREATE UNIQUE INDEX idx_user_role ON 
-	user_roles( role_id, user_id );-- --
+	user_roles( role_id, user_id );
 
 SQL
 );
