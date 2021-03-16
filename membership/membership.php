@@ -131,13 +131,14 @@ CREATE TABLE users (
 	password TEXT NOT NULL,
 	display TEXT DEFAULT NULL COLLATE NOCASE,
 	bio TEXT DEFAULT NULL COLLATE NOCASE,
-	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	settings TEXT NOT NULL DEFAULT '{}' COLLATE NOCASE,
 	status INTEGER NOT NULL DEFAULT 0
 );-- --
 CREATE UNIQUE INDEX idx_username ON users( username );-- --
-CREATE UNIQUE INDEX idx_user_uuid ON users( uuid );-- --
+CREATE UNIQUE INDEX idx_user_uuid ON users( uuid )
+	WHERE uuid IS NOT NULL;-- --
 
 -- User searching
 CREATE VIRTUAL TABLE user_search 
@@ -149,7 +150,7 @@ CREATE TABLE logins(
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	user_id INTEGER NOT NULL,
 	lookup TEXT NOT NULL NULL COLLATE NOCASE,
-	updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	hash TEXT DEFAULT NULL,
 	
 	CONSTRAINT fk_logins_user 
@@ -159,9 +160,11 @@ CREATE TABLE logins(
 );-- --
 CREATE UNIQUE INDEX idx_login_user ON logins( user_id );-- --
 CREATE UNIQUE INDEX idx_login_lookup ON logins( lookup );-- --
+CREATE INDEX idx_login_hash ON logins( hash )
+	WHERE hash IS NOT NULL;-- --
 
 
--- Secondary identity providers for future use E.G. two-factor
+-- Secondary identity providers E.G. two-factor
 CREATE TABLE id_providers( 
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	label TEXT NOT NULL NULL COLLATE NOCASE,
@@ -185,10 +188,10 @@ CREATE TABLE user_auth(
 	
 	-- Activity
 	last_ip TEXT DEFAULT NULL COLLATE NOCASE,
-	last_active TIMESTAMP DEFAULT NULL,
-	last_login TIMESTAMP DEFAULT NULL,
-	last_pass_change TIMESTAMP DEFAULT NULL,
-	last_lockout TIMESTAMP DEFAULT NULL,
+	last_active DATETIME DEFAULT NULL,
+	last_login DATETIME DEFAULT NULL,
+	last_pass_change DATETIME DEFAULT NULL,
+	last_lockout DATETIME DEFAULT NULL,
 	
 	-- Auth status,
 	is_approved INTEGER NOT NULL DEFAULT 0,
@@ -196,8 +199,8 @@ CREATE TABLE user_auth(
 	
 	-- Authentication tries
 	failed_attempts INTEGER NOT NULL DEFAULT 0,
-	failed_last_start TIMESTAMP DEFAULT NULL,
-	failed_last_attempt TIMESTAMP DEFAULT NULL,
+	failed_last_start DATETIME DEFAULT NULL,
+	failed_last_attempt DATETIME DEFAULT NULL,
 	
 	CONSTRAINT fk_auth_user 
 		FOREIGN KEY ( user_id ) 
@@ -210,6 +213,9 @@ CREATE TABLE user_auth(
 		ON DELETE SET NULL
 );-- --
 CREATE UNIQUE INDEX idx_user_email ON user_auth( email );-- --
+CREATE INDEX idx_user_auth_user ON user_auth( user_id );-- --
+CREATE INDEX idx_user_provider ON user_auth( provider_id )
+	WHERE provider_id IS NOT NULL;-- --
 CREATE INDEX idx_user_pin ON user_auth( mobile_pin ) 
 	WHERE mobile_pin IS NOT NULL;-- --
 CREATE INDEX idx_user_ip ON user_auth( last_ip )
