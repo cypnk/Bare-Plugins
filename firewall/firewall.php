@@ -1115,7 +1115,10 @@ function fw_botCheck() {
 // Closer evaluation
 function fw_browserCheck( $ua, $val ) {
 	// Browsers should send Accept
-	if ( !\array_key_exists( 'accept', $val ) ) {
+	if (
+		!\array_key_exists( 'accept', $val ) && 
+	    	!\array_key_exists( 'accept-encoding', $val ) 
+	) {
 		return true;
 	}
 	
