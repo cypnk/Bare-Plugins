@@ -26,7 +26,7 @@ define( 'CAPTCHA_HASH',		'tiger160,4' );
 
 // Captcha field render template
 $templates['tpl_captcha']	= <<<HTML
-	<input type="hidden" name="capA" value="{capA}">
+	<input type="hidden" name="cap_a" value="{cap_a}">
 	<input type="text" name="captcha" 
 		placeholder="{lang:forms:captcha:placeholder}" 
 		class="{input_classes}" required> 
@@ -172,46 +172,46 @@ function captcha( string $txt ) {
  */
 function genCaptcha() : array {
 	$clen	= config( 'captcha_length', \CAPTCHA_LENGTH, 'int' );
-	$sh	= config( 'captcha_hash', \CAPTCHA_HASH );
+	$sh	= hashAlgo( 'captcha_hash', \CAPTCHA_HASH );
 	
 	// Text sent as an image to user
 	$usr	= genCodeKey( $clen );
 	
 	// Random nonce
-	$capA	= genAlphaNum();
+	$cap_a	= genAlphaNum();
 	
 	// Combined hash sent as URL and stored in session
-	$capB	= \hash_hmac( $sh, $capA, $usr );
+	$cap_b	= \hash_hmac( $sh, $cap_a, $usr );
 	
 	sessionCheck();
-	$_SESSION[$capB] = $usr;
+	$_SESSION[$cap_b] = $usr;
 	
-	// Send $capA to user as an image
-	return [ $capA, $capB, $usr ];
+	// Send $cap_a to user as an image
+	return [ $cap_a, $cap_b, $usr ];
 }
 
 /**
  *  Verify captcha and nonce pair
  */
-function verifyCaptcha( $capA, $capB, $usr ) {
-	$sh	= config( 'captcha_hash', \CAPTCHA_HASH );
+function verifyCaptcha( $cap_a, $cap_b, $usr ) {
+	$sh	= hashAlgo( 'captcha_hash', \CAPTCHA_HASH );
 	return 
-	\hash_equals( $capB, \hash_hmac( $sh, $capA, $usr ) );
+	\hash_equals( $cap_b, \hash_hmac( $sh, $cap_b, $usr ) );
 }
 
 /**
  *  Generate and show captcha image if the hash name is already stored
  */
 function showCaptcha( string $event, array $hook, array $params ) {
-	$capB	=  $params['slug'] ?? '';
+	$cap_b	=  $params['slug'] ?? '';
 	
 	sessionCheck();
-	if ( empty( $capB ) || empty( $_SESSION[$capB] ) ) {
+	if ( empty( $cap_b ) || empty( $_SESSION[$cap_b] ) ) {
 		visitorError( 404, 'NotFound' );
 		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
 	}
 	
-	captcha( $_SESSION[$capB] );
+	captcha( $_SESSION[$cap_b] );
 }
 
 /**
@@ -223,7 +223,7 @@ function renderCaptcha() : string {
 	
 	return 
 	render( template( 'tpl_captcha' ), [
-		'capA'		=> $c[0],
+		'cap_a'		=> $c[0],
 		'captcha'	=> homeLink() . $p . $c[1]
 	] );
 }
