@@ -1,8 +1,7 @@
 <?php declare( strict_types = 1 );
 /**
  *  Bare Captcha: Image verification generator for forms
- *  
- *  This is a work in progress
+ *  This is not a standalone plugin
  */
 
 // Captcha image height
@@ -55,19 +54,19 @@ function captcha( string $txt ) {
 	// Check for GD
 	if ( missing( 'imagecreatetruecolor' ) ) {
 		logError( 'CAPTCHA: Check GD function availability' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound();
 	}
 	
 	// Font file (not part of assets and isn't served to visitor directly)
 	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
-	$font	= \rtrim( \PLUGINS, '/' ) . '/captcha/' . $ffile; 
-	if ( empty( filterDir( $font, \PLUGINS ) ) ) {
+	$font	= slashPath( \PLUGINS, true ) . 'captcha' . slashPath( $ffile );
+	if ( empty( filterDir( $font, $pr ) ) ) {
 		logError( 'CAPTCHA: Invalid font file location' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound();
 	}
 	if ( !file_exists( $font ) ) {
 		logError( 'CAPTCHA: Font file not found' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound();
 	}
 	
 	// Height of image
@@ -207,8 +206,7 @@ function showCaptcha( string $event, array $hook, array $params ) {
 	
 	sessionCheck();
 	if ( empty( $cap_b ) || empty( $_SESSION[$cap_b] ) ) {
-		visitorError( 404, 'NotFound' );
-		sendError( 404, errorLang( "notfound", MSG_NOTFOUND ) );
+		sendNotFound();
 	}
 	
 	captcha( $_SESSION[$cap_b] );
