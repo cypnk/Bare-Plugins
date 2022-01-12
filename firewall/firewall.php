@@ -32,6 +32,12 @@ define( 'FIREWALL_DB_LOG',		1 );
 // Maximum header size
 define( 'FIREWALL_MAX_HEADER',		512 );
 
+// Enable in depth header checking
+define( 'FIREWALL_HEADER_CHECK',	1 );
+
+// Enable browser UA checking
+define( 'FIREWALL_UA_CHECK',		1 );
+
 /**********************************************************************
  *                      Caution editing below
  **********************************************************************/
@@ -178,6 +184,11 @@ function fw_inSubnet( $ip, $subnet ) {
 
 
 function fw_uaCheck() {
+	$fua	= config( 'firewall_ua_check', \FIREWALL_UA_CHECK, 'bool' );
+	if ( !$fua ) {
+		return false;
+	}
+	
 	$ua	= getUA();
 	
 	// User Agent contains non-ASCII characters?
@@ -1300,6 +1311,12 @@ function fw_headerCheck() {
 		}
 	}
 	
+	// Continue checking headers in depth?
+	$fha	= config( 'firewall_header_check', \FIREWALL_HEADER_CHECK, 'bool' );
+	if ( !$fha ) {
+		return false;
+	}
+	
 	$ua	= getUA();
 	
 	// Probably not a bot. Then check browser
@@ -1330,7 +1347,8 @@ function fw_sanityCheck() {
 	}
 	
 	// Check if not in allowed HTTP methods
-	return !\in_array( $mt, trimmedList( \FIREWALL_METHODS, true ) );
+	$fm	= config( 'firewall_methods', \FIREWALL_METHODS );
+	return !\in_array( $mt, trimmedList( $fm, true ) );
 }
 
 function fw_insertLog( string $reason = '' ) {
