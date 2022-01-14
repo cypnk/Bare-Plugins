@@ -440,6 +440,7 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 function addMonsterIDRoutes( string $event, array $hook, array $params ) {
 	return 
 	\array_merge( $hook, [
+		[ 'get', 'monsterid',			'showMonsterID' ],
 		[ 'get', 'monsterid/:slug',		'showMonsterID' ],
 		[ 'get', 'monsterid/:slug/:page',	'showMonsterID' ]
 	] );
