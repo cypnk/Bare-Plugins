@@ -171,6 +171,14 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 	
 	// Find part files
 	$parts = monsterParts( $seed );
+	if ( empty( $parts ) ) {
+		logError( 'No parts left to create monster' );
+		if ( $send ) {
+			sendNotFound();
+		} else {
+			return;
+		}
+	}
 	
 	// Defaults
 	$smax	= config( 'monster_id_max', \MONSTER_ID_MAX, 'int' );
@@ -203,11 +211,7 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 		$im	=  \imagecreatefrompng( $file );
 		if ( !$im ) {
 			logError( 'Failed to load ' . $file );
-			\imagedestroy( $monster );
-			cleanOutput( true );
-			if ( $send ) {
-				sendNotFound();
-			}
+			continue;
 		};
 		
 		\imageSaveAlpha( $im, true );
