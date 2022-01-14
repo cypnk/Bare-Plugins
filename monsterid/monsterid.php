@@ -30,6 +30,12 @@ define( 'MONSTER_RGB_MIN',	20 );
 // Lightest random value
 define( 'MONSTER_RGB_MAX',	235 );
 
+// Preset RGB background color
+define( 'MONSTER_BG_COLOR',	'255, 255, 255' );
+
+// Use a random background color (ignores above setting)
+define( 'MONSTER_RANDOM_BG',	0 );
+
 /**
  *  Caution editing below
  */
@@ -77,10 +83,27 @@ function monsterGDCheck( string $event, array $hook, array $params ) {
  */
 function monsterPath( $seed, int $size, bool $create = false ) : string {
 	$ha	= hashAlgo( 'monster_algo', \MONSTER_ALGO );
-	$fname	= \hash( $ha, ( string ) $size . $seed );
+	$fname	= \hash( $ha, ( string ) $size . $seed ) . '.png';
 	
 	return 
 	pluginWritePath( 'monsterid', $fname, 'm_', $create, false );
+}
+
+/**
+ *  Create a random color
+ *  
+ *  @param GDImage	$img	True color image
+ *  @param int		$minC	Minimum single color value
+ *  @param int		$maxC	Maximum single color value
+ */
+function randomMonsterColor( &$img, $minC, $maxC ) {
+	return
+	\imagecolorallocate( 
+		$img, 
+		\mt_rand( $minC, $maxC ), 
+		\mt_rand( $minC, $maxC ), 
+		\mt_rand( $minC, $maxC ) 
+	);
 }
 
 /**
@@ -122,11 +145,18 @@ function buildMonster( $seed, int $size ) {
 	// Center
 	$pos	= intRange( ceil( $smax / 2 ), 1, MONSTER_ID_MAX );
 	
-	// Monster backgound
+	// Monster background
 	$monster	= \imagecreatetruecolor( $smax, $smax );
-	$bg		= \imagecolorallocate( $monster, 255, 255, 255 );
 	
-	// Blank monster
+	// Set background to preset value or random color
+	if ( config( 'monster_random_bg', \MONSTER_RANDOM_BG, 'bool' ) ) {
+		$bg = randomMonsterColor( $monster, $rgbmin, $rgbmax );
+	} else {
+		$br = trimmedList( config( 'monster_bg_color', \MONSTER_BG_COLOR ) );
+		$bg = \imagecolorallocate( $monster, $bgr[0], $bgr[1], $bgr[2] );
+	}
+	
+	// Blank monster with set background
 	\imagefill( $monster, 0, 0, $bg );
 	
 	foreach( $parts as $part => $num ) {
@@ -144,13 +174,9 @@ function buildMonster( $seed, int $size ) {
 
 		// Special case: body colors
 		if ( $part == 'body' ){
-			$color	= 
-			\imagecolorallocate( 
-				$monster, 
-				\mt_rand( $rgbmin, $rgbmax ), 
-				\mt_rand( $rgbmin, $rgbmax ), 
-				\mt_rand( $rgbmin, $rgbmax ) 
-			);
+			$color = 
+			randomMonsterColor( $monster, $rgbmin, $rgbmax );
+			
 			\imagefill( $monster, $pos, $pos, $color );
 		}
 	}
@@ -181,7 +207,7 @@ function buildMonster( $seed, int $size ) {
 	\imagedestroy( $monster );
 	
 	// Cache the monster
-	$fpath	= monsterPath( $seed, $size, true ) . '.png';
+	$fpath	= monsterPath( $seed, $size, true );
 	\file_put_contents( $fpath, $img );
 	
 	sendFile( $fpath );
@@ -212,7 +238,7 @@ function showMonsterID( string $event, array $hook, array $params ) {
 	$size	= intRange( $size, $smin, $smax );
 	
 	// Try to send cached monster if it exists
-	sendFile( monsterPath( $seed, $size, false ) . '.png' );
+	sendFile( monsterPath( $seed, $size, false ) );
 	
 	// Send to builder
 	buildMonster( $seed, $size );
@@ -262,6 +288,22 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 				'max_range'	=> 255,
 				'default'	=> 255
 			]
+		],
+		'monster_bg_color'	=> [
+			'filter'	=> 
+				\FILTER_SANITIZE_SPECIAL_CHARS,
+			'flags'	=> 
+				\FILTER_FLAG_STRIP_LOW	| 
+				\FILTER_FLAG_STRIP_HIGH	| 
+				\FILTER_FLAG_STRIP_BACKTICK 
+		],
+		'monster_random_bg'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 0,
+				'max_range'	=> 1,
+				'default'	=> \MONSTER_RANDOM_BG
+			]
 		]
 	];
 	
@@ -275,6 +317,22 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 			\MONSTER_ALGO 
 		);
 	}
+	
+	// Set bg RGB values
+	if ( isset( $data['monster_bg_color'] ) ) {
+		$bg = trimmedList( $data['monster_bg_color'] );
+		if ( count( $bg ) != 3 ) {
+			$bg = trimmedList( \MONSTER_BG_COLOR );
+		}
+		
+		$s = [];
+		foreach ( $bg as $c ) {
+			$s[] = intRange( $c, 0, 255 );
+		}
+		
+		$data['monster_bg_color'] = $s;
+	}
+	
 	return \array_merge( $hook, $data );
 }
 
