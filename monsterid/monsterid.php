@@ -181,7 +181,7 @@ function buildMonster( $seed, int $size ) {
 	\imagedestroy( $monster );
 	
 	// Cache the monster
-	$fpath	= monsterPath( $seed, $size, true );
+	$fpath	= monsterPath( $seed, $size, true ) . '.png';
 	\file_put_contents( $fpath, $img );
 	
 	sendFile( $fpath );
@@ -212,7 +212,7 @@ function showMonsterID( string $event, array $hook, array $params ) {
 	$size	= intRange( $size, $smin, $smax );
 	
 	// Try to send cached monster if it exists
-	sendFile( monsterPath( $seed, $size, false ) );
+	sendFile( monsterPath( $seed, $size, false ) . '.png' );
 	
 	// Send to builder
 	buildMonster( $seed, $size );
