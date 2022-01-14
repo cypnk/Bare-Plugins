@@ -192,7 +192,7 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 		$bg = randomMonsterColor( $monster, $rgbmin, $rgbmax );
 	} else {
 		$br = trimmedList( config( 'monster_bg_color', \MONSTER_BG_COLOR ) );
-		$bg = \imagecolorallocate( $monster, $bgr[0], $bgr[1], $bgr[2] );
+		$bg = \imagecolorallocate( $monster, $br[0], $br[1], $br[2] );
 	}
 	
 	// Blank monster with set background
