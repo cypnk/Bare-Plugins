@@ -11,7 +11,7 @@ if ( !defined( 'PATH' ) ) { die(); }
  */
 
 // Template files directory (defaults to /files/ in the templates plugin folder)
-define( 'TEMPLATES',	PLUGINS . 'templates/files/' );
+define( 'TEMPLATES',	\PLUGINS . 'templates/files/' );
 
 
 /**
@@ -34,7 +34,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 		$fname = \TEMPLATES . $t . '.tpl';
 		if ( empty( filterDir( $fname, \TEMPLATES ) ) ) {
 			// Invalid template location
-			errorLog( $err . $t );
+			logError( $err . $t );
 			continue;
 		}
 		
@@ -44,7 +44,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 			
 			// Nothing loaded?
 			if ( false === $data ) {
-				errorLog( $err . $t );
+				logError( $err . $t );
 				continue;
 			}
 			$loaded[$t]	= pacify( $data );
