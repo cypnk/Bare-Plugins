@@ -121,10 +121,9 @@ function randomMonsterColor( &$img, $minC, $maxC ) {
  *  Create list of monster part files
  *  
  *  @param mixed	$seed	Random initialization data
- *  @param bool		$send 	Send error page if true
  *  @return array
  */
-function monsterParts( $seed, bool $send ) : array {
+function monsterParts( $seed ) : array {
 	// Seed the random number generator
 	$ha	= hashAlgo( 'monster_algo', \MONSTER_ALGO );
 	$h	= \hexdec( \substr( \hash( $ha, $seed ), 0, 6 ) );
@@ -171,7 +170,7 @@ function monsterParts( $seed, bool $send ) : array {
 function buildMonster( $seed, int $size, bool $send = false ) {
 	
 	// Find part files
-	$parts = monsterParts( $seed, $send );
+	$parts = monsterParts( $seed );
 	
 	// Defaults
 	$smax	= config( 'monster_id_max', \MONSTER_ID_MAX, 'int' );
