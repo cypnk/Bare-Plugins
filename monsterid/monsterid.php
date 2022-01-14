@@ -69,6 +69,21 @@ function monsterGDCheck( string $event, array $hook, array $params ) {
 }
 
 /**
+ *  Generate the monsterID filename based on seed and size
+ *  
+ *  @param mixed	$seed		Random initialization data
+ *  @param int		$size		Square avatar size
+ *  @param bool		$create		Create source folder if true
+ */
+function monsterPath( $seed, int $size, bool $create = false ) : string {
+	$ha	= hashAlgo( 'monster_algo', \MONSTER_ALGO );
+	$fname	= \hash( $ha, ( string ) $size . $seed );
+	
+	return 
+	pluginWritePath( 'monsterid', $fname, 'm_', $create, false );
+}
+
+/**
  *  Create MonsterID
  *  
  *  @param mixed	$seed		Random initialization data
@@ -143,14 +158,7 @@ function buildMonster( $seed, int $size ) {
 	// Reset seed
 	\mt_srand();
 	
-	// Prepare to send MonsterID
-	shutdown( 'cleanup' );
-	scrubOutput();
-	httpCode( 200 );
-	preamble( '', false, false );
-	
-	\header( "Content-type: image/png" );
-	\header( "Content-Security-Policy: default-src 'self'", true );	
+	\ob_start();
 	
 	// Adjust monster to given size if less than max
 	if ( $size < $smax ){
@@ -167,10 +175,16 @@ function buildMonster( $seed, int $size ) {
 		\imagepng( $monster );
 	}
 	
-	// Done
-	flushOutput( true );
+	// Save
+	$img	= \ob_get_contents();
+	cleanOutput( true );
 	\imagedestroy( $monster );
-	shutdown();
+	
+	// Cache the monster
+	$fpath	= monsterPath( $seed, $size, true );
+	\file_put_contents( $fpath, $img );
+	
+	sendFile( $fpath );
 }
 
 
@@ -191,12 +205,17 @@ function showMonsterID( string $event, array $hook, array $params ) {
 		$seed	= $_SESSION['canary']['visit'];
 	}
 	
+	// Defaults
 	$size	= ( int ) $params['page'] ?? 0;
 	$smin	= config( 'monster_id_min', \MONSTER_ID_MIN, 'int' );
 	$smax	= config( 'monster_id_max', \MONSTER_ID_MAX, 'int' );
+	$size	= intRange( $size, $smin, $smax );
+	
+	// Try to send cached monster if it exists
+	sendFile( monsterPath( $seed, $size, false ) );
 	
 	// Send to builder
-	buildMonster( $seed, intRange( $size, $smin, $smax ) );
+	buildMonster( $seed, $size );
 }
 
 /**
