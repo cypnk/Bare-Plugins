@@ -1,8 +1,9 @@
 <?php declare( strict_types = 1 );
 if ( !defined( 'PATH' ) ) { die(); }
 /**
- *  Bare MonsterID: This is an avatar generator plugin based on the original
- *  monsterID avatar generator and an updated version
+ *  Bare MonsterID: This is an avatar generator plugin based on the 
+ *  original monsterID avatar generator and an updated version.
+ *  This is not a standalone plugin
  *  
  *  @link https://github.com/splitbrain/monsterID
  *  @link https://github.com/cypnk/monsterID
@@ -35,6 +36,16 @@ define( 'MONSTER_BG_COLOR',	'255, 255, 255' );
 
 // Use a random background color (ignores above setting)
 define( 'MONSTER_RANDOM_BG',	0 );
+
+/**
+ *  Enabling the following has performance implications
+ */
+
+// Enable building Monster ID
+define( 'MONSTER_URL_GEN',	0 );
+
+// Enable session based generation
+define( 'MONSTER_SESSION_GEN',	0 );
 
 /**
  *  Caution editing below
@@ -107,19 +118,20 @@ function randomMonsterColor( &$img, $minC, $maxC ) {
 }
 
 /**
- *  Create MonsterID
+ *  Create list of monster part files
  *  
- *  @param mixed	$seed		Random initialization data
- *  @param int		$size		Square avatar size
+ *  @param mixed	$seed	Random initialization data
+ *  @param bool		$send 	Send error page if true
+ *  @return array
  */
-function buildMonster( $seed, int $size ) {
+function monsterParts( $seed, bool $send ) : array {
 	// Seed the random number generator
 	$ha	= hashAlgo( 'monster_algo', \MONSTER_ALGO );
 	$h	= \hexdec( \substr( \hash( $ha, $seed ), 0, 6 ) );
 	\mt_srand( $h, \MT_RAND_MT19937 );
 	
 	// Parts directory
-	$pdir		= 
+	$pdir	= 
 		slashPath( \PLUGINS, true ) . 'monsterid/' . 
 		slashPath( \MONSTER_PARTS, true );
 	
@@ -133,10 +145,38 @@ function buildMonster( $seed, int $size ) {
 		'mouth'	=> \mt_rand( 1, 10 )
 	];
 	
-	cleanOutput( true );
+	// Part files check
+	$files	= [];
+	foreach ( $parts as $part => $num ) {
+		$f = $pdir . $part . '_' . $num . '.png';
+		if ( !\file_exists( $f ) ) {
+			logError( 'Missing monster part: ' . $f );
+			continue;
+		}
+		$files[$part] = $f;
+	}
 	
-	// Max monster ID size
+	// Reset seed
+	\mt_srand();
+	return $files;
+}
+
+/**
+ *  Create MonsterID
+ *  
+ *  @param mixed	$seed	Random initialization data
+ *  @param int		$size	Square avatar size
+ *  @param bool		$send	Send to visitor after generating
+ */
+function buildMonster( $seed, int $size, bool $send = false ) {
+	
+	// Find part files
+	$parts = monsterParts( $seed, $send );
+	
+	// Defaults
 	$smax	= config( 'monster_id_max', \MONSTER_ID_MAX, 'int' );
+	$smin	= config( 'monster_id_min', \MONSTER_ID_MIN, 'int' );
+	$size	= intRange( $size, $smin, $smax );
 	
 	// RGB selection range
 	$rgbmin	= config( 'monster_rgb_min', \MONSTER_RGB_MIN, 'int' );
@@ -159,13 +199,16 @@ function buildMonster( $seed, int $size ) {
 	// Blank monster with set background
 	\imagefill( $monster, 0, 0, $bg );
 	
-	foreach( $parts as $part => $num ) {
-		$file	= $pdir . $part . '_' . $num . '.png';
+	// Add monster parts
+	foreach ( $parts as $part => $file ) {
 		$im	=  \imagecreatefrompng( $file );
-		if( !$im ) {
+		if ( !$im ) {
 			logError( 'Failed to load ' . $file );
+			\imagedestroy( $monster );
 			cleanOutput( true );
-			sendNotFound();
+			if ( $send ) {
+				sendNotFound();
+			}
 		};
 		
 		\imageSaveAlpha( $im, true );
@@ -173,17 +216,19 @@ function buildMonster( $seed, int $size ) {
 		\imagedestroy( $im );
 
 		// Special case: body colors
-		if ( $part == 'body' ){
+		if ( 0 == \strcmp( $part, 'body' ) ){
 			$color = 
 			randomMonsterColor( $monster, $rgbmin, $rgbmax );
 			
 			\imagefill( $monster, $pos, $pos, $color );
 		}
 	}
-
-	// Reset seed
-	\mt_srand();
 	
+	// Generated monster path
+	$fpath	= monsterPath( $seed, $size, true );
+	
+	// Clear buffer and start fresh
+	cleanOutput( true );
 	\ob_start();
 	
 	// Adjust monster to given size if less than max
@@ -203,16 +248,42 @@ function buildMonster( $seed, int $size ) {
 	
 	// Save
 	$img	= \ob_get_contents();
+	
+	if ( false === $img ) {
+		cleanOutput( true );
+		\imagedestroy( $monster );
+		logError( 'Error creating Monster ID' );
+		sendNotFound();
+	} else {
+		// Cache the monster
+		\file_put_contents( $fpath, $img );
+	}
+	
 	cleanOutput( true );
 	\imagedestroy( $monster );
-	
-	// Cache the monster
-	$fpath	= monsterPath( $seed, $size, true );
-	\file_put_contents( $fpath, $img );
-	
-	sendFile( $fpath );
+	if ( $send ) {
+		if ( sendFile( $fpath ) ) {
+			shutdown( 'cleanup' );
+			shutdown();
+		}
+		sendNotFound();
+	}
 }
 
+/**
+ *  Create a session based random seed
+ *  
+ *  @return string
+ */
+function monsterSession() : string {
+	sessionCheck();
+	if ( empty( $_SESSION['monsterid'] ) ) {
+		$_SESSION['monsterid'] = genId();
+	}
+	
+	internalState( 'monsterSession', true );
+	return $_SESSION['monsterid'];
+}
 
 /**
  *  Generate and show MonsterID
@@ -224,11 +295,15 @@ function showMonsterID( string $event, array $hook, array $params ) {
 	}
 	
 	$seed	= $params['slug'] ?? '';
+	$murl	= config( 'monster_url_gen', \MONSTER_URL_GEN, 'bool' );
+	$mses	= config( 'monster_session_gen', \MONSTER_SESSION_GEN, 'bool' );
 	
-	// Use current session canay if seed is empty
 	if  ( empty( $seed ) ) {
-		sessionCheck();
-		$seed	= $_SESSION['canary']['visit'];
+		// No session based generation?
+		if ( !$mses ) {
+			sendNotFound();
+		}
+		$seed = monsterSession();
 	}
 	
 	// Defaults
@@ -238,10 +313,18 @@ function showMonsterID( string $event, array $hook, array $params ) {
 	$size	= intRange( $size, $smin, $smax );
 	
 	// Try to send cached monster if it exists
-	sendFile( monsterPath( $seed, $size, false ) );
+	if ( sendFile( monsterPath( $seed, $size, false ) ) ) {
+		shutdown( 'cleanup' );
+		shutdown();
+	}
+	
+	// No URL generation enabled?
+	if ( !$murl ) {
+		sendNotFound();
+	}
 	
 	// Send to builder
-	buildMonster( $seed, $size );
+	buildMonster( $seed, $size, true );
 }
 
 /**
@@ -304,6 +387,22 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 				'max_range'	=> 1,
 				'default'	=> \MONSTER_RANDOM_BG
 			]
+		],
+		'monster_url_gen'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 0,
+				'max_range'	=> 1,
+				'default'	=> \MONSTER_URL_GEN
+			]
+		],
+		'monster_session_gen'	=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 0,
+				'max_range'	=> 1,
+				'default'	=> \MONSTER_SESSION_GEN
+			]
 		]
 	];
 	
@@ -343,7 +442,7 @@ function addMonsterIDRoutes( string $event, array $hook, array $params ) {
 	return 
 	\array_merge( $hook, [
 		[ 'get', 'monsterid/:slug',		'showMonsterID' ],
-		[ 'get', 'monsterid/:page/:slug',	'showMonsterID' ]
+		[ 'get', 'monsterid/:slug/:page',	'showMonsterID' ]
 	] );
 }
 
