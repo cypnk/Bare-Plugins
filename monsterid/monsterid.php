@@ -97,7 +97,7 @@ function monsterPath( $seed, int $size, bool $create = false ) : string {
 	$fname	= \hash( $ha, ( string ) $size . $seed ) . '.png';
 	
 	return 
-	pluginWritePath( 'monsterid', $fname, 'm_', $create, false );
+	pluginWritePath( 'monsterid', $fname, '', $create, false );
 }
 
 /**
