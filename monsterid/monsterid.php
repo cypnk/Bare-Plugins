@@ -77,7 +77,8 @@ function monsterGDCheck( string $event, array $hook, array $params ) {
 	
 	// GD requirements failed?
 	if ( !empty( $miss ) ) {
-		logError( 
+		shutdown(
+			'logError', 
 			'Following GD function(s) required: ' . 
 			\implode( ', ', $miss ) 
 		);
@@ -155,8 +156,6 @@ function monsterParts( $seed ) : array {
 		$files[$part] = $f;
 	}
 	
-	// Reset seed
-	\mt_srand();
 	return $files;
 }
 
@@ -172,7 +171,11 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 	// Find part files
 	$parts = monsterParts( $seed );
 	if ( empty( $parts ) ) {
-		logError( 'No parts left to create monster' );
+		shutdown( 'logError', 'No parts left to create monster' );
+		
+		// Reset seed
+		\mt_srand();
+		
 		if ( $send ) {
 			sendNotFound();
 		} else {
@@ -200,17 +203,20 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 		$bg = randomMonsterColor( $monster, $rgbmin, $rgbmax );
 	} else {
 		$br = trimmedList( config( 'monster_bg_color', \MONSTER_BG_COLOR ) );
-		$bg = \imagecolorallocate( $monster, $br[0], $br[1], $br[2] );
+		$bg = \imagecolorallocate( 
+			$monster, ( int ) $br[0], ( int ) $br[1], ( int ) $br[2] 
+		);
 	}
 	
 	// Blank monster with set background
 	\imagefill( $monster, 0, 0, $bg );
 	
 	// Add monster parts
+	$err	= [];
 	foreach ( $parts as $part => $file ) {
 		$im	=  \imagecreatefrompng( $file );
 		if ( !$im ) {
-			logError( 'Failed to load ' . $file );
+			$err[] = 'Failed to load ' . $file;
 			continue;
 		};
 		
@@ -226,6 +232,12 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 			\imagefill( $monster, $pos, $pos, $color );
 		}
 	}
+	if ( !empty( $err ) ) {
+		shutdown( 'logError', implode( ', ', $err ) );
+	}
+	
+	// Reset seed
+	\mt_srand();
 	
 	// Generated monster path
 	$fpath	= monsterPath( $seed, $size, true );
@@ -255,7 +267,7 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 	if ( false === $img ) {
 		cleanOutput( true );
 		\imagedestroy( $monster );
-		logError( 'Error creating Monster ID' );
+		shutdown( 'logError', 'Error creating Monster ID' );
 		sendNotFound();
 	} else {
 		// Cache the monster
@@ -310,9 +322,9 @@ function showMonsterID( string $event, array $hook, array $params ) {
 	}
 	
 	// Defaults
-	$size	= ( int ) $params['page'] ?? 0;
 	$smin	= config( 'monster_id_min', \MONSTER_ID_MIN, 'int' );
 	$smax	= config( 'monster_id_max', \MONSTER_ID_MAX, 'int' );
+	$size	= ( int ) $params['id'] ?? $smax;
 	$size	= intRange( $size, $smin, $smax );
 	
 	// Try to send cached monster if it exists
@@ -444,9 +456,9 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 function addMonsterIDRoutes( string $event, array $hook, array $params ) {
 	return 
 	\array_merge( $hook, [
-		[ 'get', 'monsterid',			'showMonsterID' ],
-		[ 'get', 'monsterid/:slug',		'showMonsterID' ],
-		[ 'get', 'monsterid/:slug/:page',	'showMonsterID' ]
+		[ 'get', 'monsterid',			'monsteridshow' ],
+		[ 'get', 'monsterid/:slug',		'monsteridshow' ],
+		[ 'get', 'monsterid/:slug/:id',	'monsteridshow' ]
 	] );
 }
 
@@ -458,4 +470,6 @@ hook( [ 'pluginsLoaded',	'monsterGDCheck' ] );
 hook( [ 'checkconfig',		'checkMonsterIDConfig' ] );
 hook( [ 'initroutes',		'addMonsterIDRoutes' ] );
 
+// MonsterID request/show event
+hook( [ 'monsteridshow',	'showMonsterID' ] );
 
