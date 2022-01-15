@@ -22,6 +22,8 @@ define( 'CAPTCHA_NAME',		'captcha.png' );
 // Default hashing algorithm
 define( 'CAPTCHA_HASH',		'tiger160,4' );
 
+// Generate session via URL if true (mostly used for testing)
+define( 'CAPTCHA_GEN_URL',	0 );
 
 // Captcha field render template
 $templates['tpl_captcha']	= <<<HTML
@@ -135,9 +137,11 @@ function captcha( string $txt ) {
 		sendNotFound();
 	}
 	
+	$pr = slashPath( \PLUGINS, true ) . 'captcha';
+	
 	// Font file (not part of assets and isn't served to visitor directly)
 	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
-	$font	= slashPath( \PLUGINS, true ) . 'captcha' . slashPath( $ffile );
+	$font	= $pr . slashPath( $ffile );
 	if ( empty( filterDir( $font, $pr ) ) ) {
 		shutdown( 'logError', 'CAPTCHA: Invalid font file location' );
 		sendNotFound();
@@ -228,7 +232,7 @@ function genCaptcha() : array {
 function verifyCaptcha( $cap_a, $cap_b, $usr ) {
 	$sh	= hashAlgo( 'captcha_hash', \CAPTCHA_HASH );
 	return 
-	\hash_equals( $cap_b, \hash_hmac( $sh, $cap_b, $usr ) );
+	\hash_equals( $cap_b, \hash_hmac( $sh, $cap_a, $usr ) );
 }
 
 /**
@@ -238,8 +242,13 @@ function showCaptcha( string $event, array $hook, array $params ) {
 	$cap_b	=  $params['slug'] ?? '';
 	
 	sessionCheck();
-	if ( empty( $cap_b ) || empty( $_SESSION[$cap_b] ) ) {
-		sendNotFound();
+	if ( config( 'captcha_gen_url', \CAPTCHA_GEN_URL, 'bool' ) ) {
+		$gen = genCaptcha();
+		captcha( $gen[0] );
+	} else {
+		if ( empty( $cap_b ) || empty( $_SESSION[$cap_b] ) ) {
+			sendNotFound();
+		}
 	}
 	
 	captcha( $_SESSION[$cap_b] );
@@ -344,6 +353,14 @@ function checkCaptchaConfig( string $event, array $hook, array $params ) {
 				\FILTER_FLAG_STRIP_LOW	| 
 				\FILTER_FLAG_STRIP_HIGH	| 
 				\FILTER_FLAG_STRIP_BACKTICK 
+		],
+		'captcha_gen_url'=> [
+			'filter'	=> \FILTER_VALIDATE_INT,
+			'options'	=> [
+				'min_range'	=> 0,
+				'max_range'	=> 1,
+				'default'	=> \CAPTCHA_GEN_URL
+			]
 		]
 	];
 	
