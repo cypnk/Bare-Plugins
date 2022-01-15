@@ -451,6 +451,14 @@ function checkMonsterIDConfig( string $event, array $hook, array $params ) {
 }
 
 /**
+ *  Set throttling URI prefixes
+ */
+function monsterThrottling() {
+	// Disable throttling to paths starting with /monsterid
+	throttleDisabled( '/monsterid' );	
+}
+
+/**
  *  Append MonsterID route
  */
 function addMonsterIDRoutes( string $event, array $hook, array $params ) {
@@ -467,6 +475,7 @@ function addMonsterIDRoutes( string $event, array $hook, array $params ) {
 
 // Initialize configuration
 hook( [ 'pluginsLoaded',	'monsterGDCheck' ] );
+hook( [ 'pluginsLoaded',	'monsterThrottling' ] );
 hook( [ 'checkconfig',		'checkMonsterIDConfig' ] );
 hook( [ 'initroutes',		'addMonsterIDRoutes' ] );
 
