@@ -46,67 +46,40 @@ define( 'CAPTCHA_LANG',		<<<JSON
 JSON
 );
 
+/**
+ *  GD Color allocation helper
+ *  
+ *  @param GdImage	$img	Captcha source image
+ *  @param int		$min	Minimum RGB range
+ *  @param int		$max	Maximum RGB range
+ *  @return mixed		Int on success or false on failure
+ */
+function captchaColors( &$img, int $min, int $max ) {
+	return 
+	\imagecolorallocate( 
+		$img, 
+		\mt_rand( $min, $max ), 
+		\mt_rand( $min, $max ), 
+		\mt_rand( $min, $max ) 
+	);
+}
 
 /**
- *  Generate captcha image
+ *  Draw random lines
+ *  
+ *  @param GdImage	$img	Captcha source image
+ *  @param int		$sizex	Source image width
+ *  @param int		$sizey	Source image height
  */
-function captcha( string $txt ) {
-	// Check for GD
-	if ( missing( 'imagecreatetruecolor' ) ) {
-		logError( 'CAPTCHA: Check GD function availability' );
-		sendNotFound();
-	}
+function captchaLines( &$img, int $sizex, int $sizey ) {
+	$e = ( $sizex * $sizey ) / 250;
 	
-	// Font file (not part of assets and isn't served to visitor directly)
-	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
-	$font	= slashPath( \PLUGINS, true ) . 'captcha' . slashPath( $ffile );
-	if ( empty( filterDir( $font, $pr ) ) ) {
-		shutdown( 'logError', 'CAPTCHA: Invalid font file location' );
-		sendNotFound();
-	}
-	if ( !file_exists( $font ) ) {
-		shutdown( 'logError', 'CAPTCHA: Font file not found' );
-		sendNotFound();
-	}
-	
-	// Height of image
- 	$sizey	= config( 'captcha_height', \CAPTCHA_HEIGHT, 'int' );
-	
-	// Image meta info
-	$mime	= config( 'captcha_mime', \CAPTCHA_MIME );
-	$name	= config( 'captcha_name', \CAPTCHA_NAME );
-	
-	// Character length
- 	$cl	= strsize( $txt );
-	
-	// Expand the image with the number of characters
- 	$sizex	= ( $cl * 19 ) + 10;
-	
-	// Some initial padding
-	$w	= floor( $sizex / $cl ) - 13;
-	
-	$img = \imagecreatetruecolor( $sizex, $sizey );
-	$bg = \imagecolorallocate( $img, 255, 255, 255 );
-	
-	\imagefilledrectangle( $img, 0, 0, $sizex, $sizey, $bg );
-	
-	// Line thickness
-	\imagesetthickness( $img, 3 );
-	
-	$ha	= hashAlgo( 'captcha_algo', \CAPTCHA_ALGO );
-	$h	= \hexdec( \substr( \hash( $ha, $txt ), 0, 6 ) );
-	\mt_srand( $h, \MT_RAND_MT19937 );
-	
-	// Random lines
-	for( $i = 0; $i < ( $sizex * $sizey ) / 250; $i++ ) {
+	for ( $i = 0; $i < $e; $i++ ) {
+		// Random line thickness
+		\imagesetthickness( $img, \mt_rand( 2, 4 ) );
+		
 		// Select colors in a comfortable range
-		$t = 
-		\imagecolorallocate( 
-			$img, 
-			\mt_rand( 150, 200 ), 
-			\mt_rand( 150, 200 ), 
-			\mt_rand( 150, 200 ) 
-		);
+		$t = captchaColors( $img, 150, 200 );
 		
 		\imageline( 
 			$img, 
@@ -120,35 +93,17 @@ function captcha( string $txt ) {
 	
 	// Reset thickness
 	\imagesetthickness( $img, 1 );
-	
-	// Insert the text (with random colors and placement)
-	for ( $i = $cl; $i >= 0; $i--) {
-		
-		$l	= truncate( $txt, $i, 1 );
-		
-		// Maybe pastels
-		$tc	= 
-		\imagecolorallocate( 
-			$img, 
-			\mt_rand( 0, 150 ), 
-			\mt_rand( 10, 150 ), 
-			\mt_rand( 10, 150 ) 
-		);
-		
-		\imagettftext( 
-			$img, 
-			30, 
-			\mt_rand( -10, 10 ), 
-			$w + ( $i * \mt_rand( 18, 19 ) ), 
-			\mt_rand( 30, 40 ), 
-			$tc, 
-			$font, 
-			$l 
-		);
-	}
-	
-	// Reset
-	\mt_srand();
+}
+
+/**
+ *  Send generated captcha image to visitor with headers
+ *  
+ *  @param GdImage	$img	Captcha source image
+ */
+function captchaSend( &$img ) {
+	// Image meta info
+	$mime	= config( 'captcha_mime', \CAPTCHA_MIME );
+	$name	= config( 'captcha_name', \CAPTCHA_NAME );
 	
 	// Prepare headers
 	sendGenFilePrep( $mime, $name, 200, false );
@@ -168,6 +123,77 @@ function captcha( string $txt ) {
 			\imagebmp( $img );
 			break;
 	}
+}
+
+/**
+ *  Generate captcha image
+ */
+function captcha( string $txt ) {
+	// Check for GD
+	if ( missing( 'imagecreatetruecolor' ) ) {
+		logError( 'CAPTCHA: Check GD function availability' );
+		sendNotFound();
+	}
+	
+	// Font file (not part of assets and isn't served to visitor directly)
+	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
+	$font	= slashPath( \PLUGINS, true ) . 'captcha' . slashPath( $ffile );
+	if ( empty( filterDir( $font, $pr ) ) ) {
+		shutdown( 'logError', 'CAPTCHA: Invalid font file location' );
+		sendNotFound();
+	}
+	if ( !\file_exists( $font ) ) {
+		shutdown( 'logError', 'CAPTCHA: Font file not found' );
+		sendNotFound();
+	}
+	
+	// Height of image
+ 	$sizey	= config( 'captcha_height', \CAPTCHA_HEIGHT, 'int' );
+	
+	// Character length
+ 	$cl	= strsize( $txt );
+	
+	// Expand the image with the number of characters
+ 	$sizex	= ( $cl * 19 ) + 10;
+	
+	// Seed random with given text
+	$ha	= hashAlgo( 'captcha_hash', \CAPTCHA_HASH );
+	$h	= \hexdec( \substr( \hash( $ha, $txt ), 0, 6 ) );
+	\mt_srand( $h, \MT_RAND_MT19937 );
+	
+	$img	= \imagecreatetruecolor( $sizex, $sizey );
+	
+	// Fill background color
+	$bg	= captchaColors( $img, 230, 255 );
+	\imagefilledrectangle( $img, 0, 0, $sizex, $sizey, $bg );
+	
+	// Random lines
+	captchaLines( $img, $sizex, $sizey );
+	
+	// Font point sizes
+	$fpt	= [ 18, 24, 30 ];
+	
+	// Some initial padding
+	$fp	= floor( $sizex / $cl ) - 13;
+	
+	// Insert the text (with random colors and placement)
+	for ( $i = $cl; $i >= 0; $i--) {
+		
+		\imagettftext( 
+			$img, 
+			$fpt[\array_rand( $fpt, 1 )],		// Font size
+			\mt_rand( -10, 10 ),			// Text angleH
+			$fp + ( $i * \mt_rand( 18, 19 ) ),	// X position (padding + space for added text)
+			\mt_rand( $sizey - 5, $sizey + 5 ),	// Y position (relative to image height)
+			captchaColors( $img, 10, 150 ),		// Line color (maybe pastels)
+			$font,					// Font file
+			truncate( $txt, $i, 1 )			// Single character from text
+		);
+	}
+	
+	// Reset
+	\mt_srand();
+	captchaSend( $img );
 	
 	\imagedestroy( $img );
 	shutdown();
@@ -231,6 +257,15 @@ function renderCaptcha() : string {
 		'cap_a'		=> $c[0],
 		'captcha'	=> homeLink() . $p . $c[1]
 	] );
+}
+
+
+/**
+ *  Disable throttling of captcha route
+ */
+function captchaThrottle() {
+	// Important: Only disable with trailing slash as there's always a slug
+	throttleDisabled( '/captcha/' );	
 }
 
 /**
@@ -345,6 +380,7 @@ function checkCaptchaConfig( string $event, array $hook, array $params ) {
 }
 
 // Register events
+hook( [ 'pluginsLoaded', 'captchaThrottle' ] );
 hook( [ 'checkconfig',	'checkCaptchaConfig' ] );
 hook( [ 'initroutes',	'addCaptchaRoutes' ] );
 hook( [ 'loadlanguage',	'captchaLang' ] );
