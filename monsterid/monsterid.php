@@ -264,24 +264,24 @@ function buildMonster( $seed, int $size, bool $send = false ) {
 	// Save
 	$img	= \ob_get_contents();
 	
-	if ( false === $img ) {
-		cleanOutput( true );
-		\imagedestroy( $monster );
-		shutdown( 'logError', 'Error creating Monster ID' );
-		sendNotFound();
-	} else {
-		// Cache the monster
-		\file_put_contents( $fpath, $img );
-	}
-	
 	cleanOutput( true );
 	\imagedestroy( $monster );
-	if ( $send ) {
-		if ( sendFile( $fpath ) ) {
-			shutdown( 'cleanup' );
-			shutdown();
-		}
+	
+	if ( false === $img ) {
+		shutdown( 'logError', 'Error creating Monster ID' );
 		sendNotFound();
+	}
+	
+	\file_put_contents( $fpath, $img );
+	
+	if ( $send ) {
+		// Prepare headers
+		sendGenFilePrep( 'image/png', 'monsterid', 200 );
+		// Cleanup and flush before readfile
+		cleanup();
+		flushOutput( true );
+		\readfile( $fpath );
+		shutdown();
 	}
 }
 
