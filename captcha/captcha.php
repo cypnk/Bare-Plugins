@@ -182,13 +182,15 @@ function captcha( string $txt ) {
 	
 	// Insert the text (with random colors and placement)
 	for ( $i = $cl; $i >= 0; $i--) {
+		// X position (padding + space for added text)
+		$xpos = ( int ) ceil( $fp + ( $i * \mt_rand( 18, 19 ) ) );
 		
 		\imagettftext( 
 			$img, 
 			$fpt[\array_rand( $fpt, 1 )],		// Font size
-			\mt_rand( -10, 10 ),			// Text angleH
-			$fp + ( $i * \mt_rand( 18, 19 ) ),	// X position (padding + space for added text)
-			\mt_rand( $sizey - 5, $sizey + 5 ),	// Y position (relative to image height)
+			\mt_rand( -15, 15 ),			// Text angle
+			$xpos,
+			\mt_rand( $sizey - 5, $sizey - 3 ),	// Y position (relative to image height)
 			captchaColors( $img, 10, 150 ),		// Line color (maybe pastels)
 			$font,					// Font file
 			truncate( $txt, $i, 1 )			// Single character from text
@@ -244,7 +246,7 @@ function showCaptcha( string $event, array $hook, array $params ) {
 	sessionCheck();
 	if ( config( 'captcha_gen_url', \CAPTCHA_GEN_URL, 'bool' ) ) {
 		$gen = genCaptcha();
-		captcha( $gen[0] );
+		captcha( $gen[2] );
 	} else {
 		if ( empty( $cap_b ) || empty( $_SESSION[$cap_b] ) ) {
 			sendNotFound();
