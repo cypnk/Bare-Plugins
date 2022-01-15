@@ -61,11 +61,11 @@ function captcha( string $txt ) {
 	$ffile	= config( 'captcha_font', \CAPTCHA_FONT );
 	$font	= slashPath( \PLUGINS, true ) . 'captcha' . slashPath( $ffile );
 	if ( empty( filterDir( $font, $pr ) ) ) {
-		logError( 'CAPTCHA: Invalid font file location' );
+		shutdown( 'logError', 'CAPTCHA: Invalid font file location' );
 		sendNotFound();
 	}
 	if ( !file_exists( $font ) ) {
-		logError( 'CAPTCHA: Font file not found' );
+		shutdown( 'logError', 'CAPTCHA: Font file not found' );
 		sendNotFound();
 	}
 	
@@ -93,15 +93,19 @@ function captcha( string $txt ) {
 	// Line thickness
 	\imagesetthickness( $img, 3 );
 	
+	$ha	= hashAlgo( 'captcha_algo', \CAPTCHA_ALGO );
+	$h	= \hexdec( \substr( \hash( $ha, $txt ), 0, 6 ) );
+	\mt_srand( $h, \MT_RAND_MT19937 );
+	
 	// Random lines
 	for( $i = 0; $i < ( $sizex * $sizey ) / 250; $i++ ) {
 		// Select colors in a comfortable range
 		$t = 
 		\imagecolorallocate( 
 			$img, 
-			\rand( 150, 200 ), 
-			\rand( 150, 200 ), 
-			\rand( 150, 200 ) 
+			\mt_rand( 150, 200 ), 
+			\mt_rand( 150, 200 ), 
+			\mt_rand( 150, 200 ) 
 		);
 		
 		\imageline( 
@@ -126,22 +130,25 @@ function captcha( string $txt ) {
 		$tc	= 
 		\imagecolorallocate( 
 			$img, 
-			\rand( 0, 150 ), 
-			\rand( 10, 150 ), 
-			\rand( 10, 150 ) 
+			\mt_rand( 0, 150 ), 
+			\mt_rand( 10, 150 ), 
+			\mt_rand( 10, 150 ) 
 		);
 		
 		\imagettftext( 
 			$img, 
 			30, 
-			\rand( -10, 10 ), 
-			$w + ( $i * \rand( 18, 19 ) ), 
-			\rand( 30, 40 ), 
+			\mt_rand( -10, 10 ), 
+			$w + ( $i * \mt_rand( 18, 19 ) ), 
+			\mt_rand( 30, 40 ), 
 			$tc, 
 			$font, 
 			$l 
 		);
 	}
+	
+	// Reset
+	\mt_srand();
 	
 	// Prepare headers
 	sendGenFilePrep( $mime, $name, 200, false );
