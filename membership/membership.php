@@ -139,6 +139,9 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX idx_username ON users( username );-- --
 CREATE UNIQUE INDEX idx_user_uuid ON users( uuid )
 	WHERE uuid IS NOT NULL;-- --
+CREATE INDEX idx_user_created ON users ( created );-- --
+CREATE INDEX idx_user_updated ON users ( updated );-- --
+CREATE INDEX idx_user_status ON users ( status );-- --
 
 -- User searching
 CREATE VIRTUAL TABLE user_search 
@@ -690,6 +693,25 @@ function memberFormStatus( int $status ) {
 }
 
 /**
+ *  Basic username filter
+ *  
+ *  @param string	$user		Raw username as entered
+ *  @return string
+ */
+function memberName( string $user ) : string {
+	$user	= memberPrefilter( $user );
+	$umin	= config( 'member_min_user', \MEMBER_MIN_USER, 'int' );
+	$umax	= config( 'member_max_user', \MEMBER_MAX_USER, 'int' );
+	$usent	= strsize( $username );
+	
+	if ( $usent > $umin || $usent < $umin ) {
+		return '';
+	}
+	
+	return $user;
+}
+
+/**
  *  Detailed credential validation
  *  
  *  @param array	$data		Form data sent by the user
@@ -703,15 +725,12 @@ function memberCredStatus( array $data ) : array {
 		return [ errorLang( 'member_err_emptycred', \MSG_EMPTYCRED ) ];
 	}
 	
-	$umin	= config( 'member_min_user', \MEMBER_MIN_USER, 'int' );
-	$umax	= config( 'member_max_user', \MEMBER_MAX_USER, 'int' );
+	$data['username'] = memberName( $data['username'] );
 	$pmin	= config( 'member_min_pass' \MEMBER_MIN_PASS, 'int' );
-	
-	$usent	= strsize( $data['username'] );
 	$psent	= strsize( $tpass ) ;
 	
 	$msg	= [];
-	if ( $sent > $umin || $usent < $umin ) {
+	if ( empty( $data['username'] ) ) {
 		$msg[] = errorLang( 'member_err_user_nameerr', \MSG_USER_NAMEERR );
 	}
 	
@@ -1533,6 +1552,12 @@ function checkMemberConfig( string $event, array $hook, array $params ) {
 				'default'	=> \MEMBER_ATTEMPTS
 			]
 		],
+		
+		'member_blacklist'	=> 
+			'filter'	=> \FILTER_CALLBACK,
+			'flags'		=> \FILTER_REQUIRE_ARRAY,
+			'options'	=> 'memberPrefilter'
+		]
 	];
 	
 	return 
