@@ -48,10 +48,17 @@ $templates['tpl_main']			= '<main {extra}>{html}</main>';
 $templates['tpl_article']		= '<article {extra}>{html}</article>';
 $templates['tpl_header']		= '<header {extra}>{html}</header>';
 $templates['tpl_aside']			= '<aside {extra}>{html}</aside>';
+$templates['tpl_nav']			= '<nav {extra}>{html}</nav>';
 $templates['tpl_footer']		= '<footer {extra}>{html}</footer>';
 
 // data-reference HTML 5 attribute, E.G. <span data-rel="author">
 $templates['tpl_data_pfx']		= 'data-{term}="{value}"';
+
+// ID class prefix
+$templates['tpl_id_pfx']		= 'id="{id}"';
+
+// CSS class prefix
+$templates['tpl_class_pfx']		= 'class="{classes}"';
 
 /**
  *  Navigation components
@@ -133,7 +140,7 @@ HTML;
 // General list for E.G. "Related", "New", "More" etc...
 $templates['tpl_page_list']		= <<<HTML
 <div class="{list_wrap_classes}">
-	<h3 class="list_h_classes">{heading}</h3>
+	<h3 class="{list_h_classes}">{heading}</h3>
 	<nav class="{list_classes}"><ul>{links}</ul></nav>
 </div>
 HTML;
