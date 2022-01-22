@@ -95,10 +95,12 @@ function monsterGDCheck( string $event, array $hook, array $params ) {
  */
 function monsterPath( $seed, int $size, bool $create = false ) : string {
 	$ha	= hashAlgo( 'monster_algo', \MONSTER_ALGO );
-	$fname	= \hash( $ha, ( string ) $size . $seed ) . '.png';
+	$fname	= 
+	\chunk_split( \hash( $ha, $seed ), 13, '/' ) . 
+		( string ) $size . '.png';
 	
 	return 
-	pluginWritePath( 'monsterid', $fname, '', $create, false );
+	pluginWritePath( 'monsterid', $fname, '', $create, true );
 }
 
 /**
