@@ -10,7 +10,7 @@ The following plugins are ready to install:
 - [render](https://github.com/cypnk/Bare-Plugins/tree/master/render): A helper to build forms and other page fragments, which can be used by other plugins
 - [captcha](https://github.com/cypnk/Bare-Plugins/tree/master/captcha): A text on image generator for form field validation, used with other plugins
 - [monsterid](https://github.com/cypnk/Bare-Plugins/tree/master/monsterid): A random avatar generator based on the [original](https://github.com/splitbrain/monsterID), used with other plugins
-
+- [upload](https://github.com/cypnk/Bare-Plugins/tree/master/upload): A helper plugin to let Bare handle file uploads, for use with other plugins
 
 These are still under development and will be non-functional and/or contain bugs:
 - [membership](https://github.com/cypnk/Bare-Plugins/tree/master/membership): A user login and registration helper for use with other plugins
