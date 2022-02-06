@@ -38,16 +38,17 @@ function createThumbnail(
 		return '';
 	}
 	
-	if ( empty( $imgsize[0] ) || emptY( $imgsize[1] ) ) {
+	if ( empty( $imgsize[0] ) || empty( $imgsize[1] ) ) {
 		return '';
 	}
 	$width		= $imgsize[0];
 	$height		= $imgsize[1];
 	
-	$t_width	= config( 'thumbnail_width', \THUMBNAIL_WIDTH, 'int' );
+	$t_width	= 
+	config( 'thumbnail_width', \THUMBNAIL_WIDTH, 'int' );
 	
 	// Width too small to generate thumbnail
-	if ( $t_width > $width ) ) {
+	if ( $t_width > $width ) {
 		return '';
 	}
 	
