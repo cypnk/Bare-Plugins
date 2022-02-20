@@ -261,12 +261,12 @@ function showCaptcha( string $event, array $hook, array $params ) {
  */
 function renderCaptcha() : string {
 	$c = genCaptcha();
-	$p = cutSlug( eventRoutePrefix( 'showcaptcha', 'captcha' ) ) . '/';
+	$p = slashPath( pageRoutePath( 'showcaptcha', 'captcha' ), true );
 	
 	return 
 	render( template( 'tpl_captcha' ), [
 		'cap_a'		=> $c[0],
-		'captcha'	=> homeLink() . $p . $c[1]
+		'captcha'	=> $p . $c[1]
 	] );
 }
 
