@@ -24,7 +24,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 	}
 	
 	$loaded	= [];
-	$err	= 'Error loading ';
+	$err	= [];
 	foreach( $tpl as $t ) {
 		if ( !\is_string( $t ) ) {
 			continue;
@@ -34,7 +34,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 		$fname = \TEMPLATES . $t . '.tpl';
 		if ( empty( filterDir( $fname, \TEMPLATES ) ) ) {
 			// Invalid template location
-			logError( $err . $t );
+			$err[] = $t;
 			continue;
 		}
 		
@@ -44,7 +44,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 			
 			// Nothing loaded?
 			if ( false === $data ) {
-				logError( $err . $t );
+				$err[] = $t;
 				continue;
 			}
 			$loaded[$t]	= pacify( $data );
@@ -54,6 +54,14 @@ function loadTemplates( string $event, array $hook, array $params ) {
 	// Re-register new templates, if any
 	if ( !empty( $loaded ) ) {
 		template( '', $loaded );
+	}
+	
+	// Log any template loading errors on shutdown
+	if ( !empty( $err ) ) {
+		shutdown( 
+			'logError', 
+			'Error loading: ' . implode( ' ' . $err ) 
+		);
 	}
 	return \array_merge( $hook, $params );
 }
