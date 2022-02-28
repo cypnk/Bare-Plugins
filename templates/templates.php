@@ -33,7 +33,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 		
 		// Load new template file
 		$data	= 
-		loadFile( $tdir . $t . '.tpl', $tdir, false );
+		loadFile( $t . '.tpl', $tdir, false );
 		
 		if ( empty( $data ) ) {
 			$err[] = $t;
