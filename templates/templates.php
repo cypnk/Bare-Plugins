@@ -51,7 +51,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 	if ( !empty( $err ) ) {
 		shutdown( 
 			'logError', 
-			'Error loading: ' . implode( ' ' . $err ) 
+			'Error loading: ' . implode( ' ', $err ) 
 		);
 	}
 	return \array_merge( $hook, $params );
