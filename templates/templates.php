@@ -23,6 +23,7 @@ function loadTemplates( string $event, array $hook, array $params ) {
 		return \array_merge( $hook, $params );
 	}
 	
+	$tdir	= slashPath( \TEMPLATES, true );
 	$loaded	= [];
 	$err	= [];
 	foreach( $tpl as $t ) {
@@ -30,25 +31,15 @@ function loadTemplates( string $event, array $hook, array $params ) {
 			continue;
 		}
 		
-		// Load new template file from cache folder
-		$fname = \TEMPLATES . $t . '.tpl';
-		if ( empty( filterDir( $fname, \TEMPLATES ) ) ) {
-			// Invalid template location
+		// Load new template file
+		$data	= 
+		loadFile( $tdir . $t . '.tpl', $tdir, false );
+		
+		if ( empty( $data ) ) {
 			$err[] = $t;
 			continue;
 		}
-		
-		// Only load existing templates
-		if ( \file_exists( $fname ) ) {
-			$data = \file_get_contents( $fname );
-			
-			// Nothing loaded?
-			if ( false === $data ) {
-				$err[] = $t;
-				continue;
-			}
-			$loaded[$t]	= pacify( $data );
-		}
+		$loaded[$t]	= pacify( $data );
 	}
 	
 	// Re-register new templates, if any
