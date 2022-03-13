@@ -129,6 +129,7 @@ CREATE TABLE users (
 	uuid TEXT DEFAULT NULL COLLATE NOCASE,
 	username TEXT NOT NULL COLLATE NOCASE,
 	password TEXT NOT NULL,
+	user_clean TEXT NOT NULL COLLATE NOCASE,
 	display TEXT DEFAULT NULL COLLATE NOCASE,
 	bio TEXT DEFAULT NULL COLLATE NOCASE,
 	created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -136,7 +137,8 @@ CREATE TABLE users (
 	settings TEXT NOT NULL DEFAULT '{}' COLLATE NOCASE,
 	status INTEGER NOT NULL DEFAULT 0
 );-- --
-CREATE UNIQUE INDEX idx_username ON users( username );-- --
+CREATE UNIQUE INDEX idx_user_name ON users( username );-- --
+CREATE UNIQUE INDEX idx_user_clean ON users( user_clean );-- --
 CREATE UNIQUE INDEX idx_user_uuid ON users( uuid )
 	WHERE uuid IS NOT NULL;-- --
 CREATE INDEX idx_user_created ON users ( created );-- --
@@ -152,7 +154,7 @@ CREATE VIRTUAL TABLE user_search
 CREATE TABLE logins(
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	user_id INTEGER NOT NULL,
-	lookup TEXT NOT NULL NULL COLLATE NOCASE,
+	lookup TEXT NOT NULL COLLATE NOCASE,
 	updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	hash TEXT DEFAULT NULL,
 	
@@ -163,6 +165,7 @@ CREATE TABLE logins(
 );-- --
 CREATE UNIQUE INDEX idx_login_user ON logins( user_id );-- --
 CREATE UNIQUE INDEX idx_login_lookup ON logins( lookup );-- --
+CREATE INDEX idx_login_updated ON logins( updated );-- --
 CREATE INDEX idx_login_hash ON logins( hash )
 	WHERE hash IS NOT NULL;-- --
 
@@ -170,7 +173,7 @@ CREATE INDEX idx_login_hash ON logins( hash )
 -- Secondary identity providers E.G. two-factor
 CREATE TABLE id_providers( 
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-	label TEXT NOT NULL NULL COLLATE NOCASE,
+	label TEXT NOT NULL COLLATE NOCASE,
 	sort_order INTEGER NOT NULL DEFAULT 0,
 	
 	-- Serialized JSON
@@ -191,10 +194,12 @@ CREATE TABLE user_auth(
 	
 	-- Activity
 	last_ip TEXT DEFAULT NULL COLLATE NOCASE,
+	last_ua TEXT DEFAULT NULL COLLATE NOCASE,
 	last_active DATETIME DEFAULT NULL,
 	last_login DATETIME DEFAULT NULL,
 	last_pass_change DATETIME DEFAULT NULL,
 	last_lockout DATETIME DEFAULT NULL,
+	last_session_id TEXT DEFAULT NULL,
 	
 	-- Auth status,
 	is_approved INTEGER NOT NULL DEFAULT 0,
@@ -204,6 +209,9 @@ CREATE TABLE user_auth(
 	failed_attempts INTEGER NOT NULL DEFAULT 0,
 	failed_last_start DATETIME DEFAULT NULL,
 	failed_last_attempt DATETIME DEFAULT NULL,
+	
+	created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	expires DATETIME DEFAULT NULL,
 	
 	CONSTRAINT fk_auth_user 
 		FOREIGN KEY ( user_id ) 
@@ -217,18 +225,27 @@ CREATE TABLE user_auth(
 );-- --
 CREATE UNIQUE INDEX idx_user_email ON user_auth( email );-- --
 CREATE INDEX idx_user_auth_user ON user_auth( user_id );-- --
-CREATE INDEX idx_user_provider ON user_auth( provider_id )
+CREATE INDEX idx_user_auth_provider ON user_auth( provider_id )
 	WHERE provider_id IS NOT NULL;-- --
 CREATE INDEX idx_user_pin ON user_auth( mobile_pin ) 
 	WHERE mobile_pin IS NOT NULL;-- --
 CREATE INDEX idx_user_ip ON user_auth( last_ip )
 	WHERE last_ip IS NOT NULL;-- --
+CREATE INDEX idx_user_ua ON user_auth( last_ua )
+	WHERE last_ua IS NOT NULL;-- --
 CREATE INDEX idx_user_active ON user_auth( last_active )
 	WHERE last_active IS NOT NULL;-- --
 CREATE INDEX idx_user_login ON user_auth( last_login )
 	WHERE last_login IS NOT NULL;-- --
+CREATE INDEX idx_user_session ON user_auth( last_session_id )
+	WHERE last_session_id IS NOT NULL;-- --
+CREATE INDEX idx_user_auth_approved ON user_auth( is_approved );-- --
+CREATE INDEX idx_user_auth_locked ON user_auth( is_locked );-- --
 CREATE INDEX idx_user_failed_last ON user_auth( failed_last_attempt )
 	WHERE failed_last_attempt IS NOT NULL;-- --
+CREATE INDEX idx_user_auth_created ON user_auth( created );-- --
+CREATE INDEX idx_user_auth_expires ON user_auth( expires )
+	WHERE expires IS NOT NULL;-- --
 
 
 -- User auth last activity
@@ -237,10 +254,13 @@ SELECT user_id,
 	provider_id,
 	is_approved,
 	is_locked,
-	last_ip
+	last_ip,
+	last_ua,
 	last_active,
 	last_login,
 	last_lockout,
+	last_pass_change,
+	last_session_id,
 	failed_attempts,
 	failed_last_start,
 	failed_last_attempt
@@ -253,19 +273,24 @@ CREATE TRIGGER user_last_login INSTEAD OF
 	UPDATE OF last_login ON auth_activity
 BEGIN 
 	UPDATE user_auth SET 
-		last_ip		= NEW.last_ip,
-		last_login	= CURRENT_TIMESTAMP, 
-		last_active	= CURRENT_TIMESTAMP
-		WHERE id	= OLD.id;
+		last_ip			= NEW.last_ip,
+		last_ua			= NEW.last_ua,
+		last_session_id		= NEW.last_session_id,
+		last_login		= CURRENT_TIMESTAMP, 
+		last_active		= CURRENT_TIMESTAMP,
+		failed_attempts		= 0
+		WHERE id = OLD.id;
 END;-- --
 
 CREATE TRIGGER user_last_ip INSTEAD OF 
 	UPDATE OF last_ip ON auth_activity
 BEGIN 
 	UPDATE user_auth SET 
-		last_ip		= NEW.last_ip, 
-		last_active	= CURRENT_TIMESTAMP 
-		WHERE id	= OLD.id;
+		last_ip			= NEW.last_ip, 
+		last_ua			= NEW.last_ua,
+		last_session_id		= NEW.last_session_id,
+		last_active		= CURRENT_TIMESTAMP 
+		WHERE id = OLD.id;
 END;-- --
 
 CREATE TRIGGER user_last_active INSTEAD OF 
@@ -276,17 +301,25 @@ BEGIN
 END;-- --
 
 CREATE TRIGGER user_last_lockout INSTEAD OF 
-	UPDATE OF last_lockout ON auth_activity
+	UPDATE OF is_locked ON auth_activity
+	WHEN NEW.is_locked = 1
 BEGIN 
-	UPDATE user_auth SET last_lockout = CURRENT_TIMESTAMP 
+	UPDATE user_auth SET 
+		is_locked	= 1,
+		last_lockout	= CURRENT_TIMESTAMP 
 		WHERE id = OLD.id;
 END;-- --
 
 CREATE TRIGGER user_failed_last_attempt INSTEAD OF 
 	UPDATE OF failed_last_attempt ON auth_activity
 BEGIN 
-	UPDATE user_auth SET failed_last_attempt = CURRENT_TIMESTAMP, 
-		failed_attempts = ( failed_attempts + 1 ) 
+	UPDATE user_auth SET 
+		last_ip			= NEW.last_ip, 
+		last_ua			= NEW.last_ua,
+		last_session_id		= NEW.last_session_id,
+		last_active		= CURRENT_TIMESTAMP,
+		failed_last_attempt	= CURRENT_TIMESTAMP, 
+		failed_attempts		= ( failed_attempts + 1 ) 
 		WHERE id = OLD.id;
 	
 	-- Update current start window if it's been 24 hours since 
@@ -303,25 +336,24 @@ END;-- --
 -- Login view
 -- Usage:
 -- SELECT * FROM login_view WHERE lookup = :lookup;
-CREATE VIEW login_view AS 
-SELECT 
-	user_id AS id, 
-	uuid AS uuid, 
+-- SELECT * FROM login_view WHERE name = :username;
+CREATE VIEW login_view AS SELECT 
+	logins.user_id AS id, 
+	users.uuid AS uuid, 
 	logins.lookup AS lookup, 
 	logins.hash AS hash, 
-	users.created AS created, 
+	logins.updated AS updated, 
 	users.status AS status, 
-	users.username AS name
+	users.username AS name, 
+	users.password AS password, 
+	users.settings AS user_settings, 
+	ua.is_approved AS is_approved, 
+	ua.is_locked AS is_locked, 
+	ua.expires AS expires
 	
 	FROM logins
-	JOIN users ON logins.user_id = users.id;-- --
-
--- Password login view
--- Usage:
--- SELECT * FROM login_pass WHERE username = :username;
-CREATE VIEW login_pass AS 
-SELECT id, uuid, username AS name, lookup, password, status 
-	FROM users;-- --
+	JOIN users ON logins.user_id = users.id
+	LEFT JOIN user_auth ua ON users.id = ua.user_id;-- --
 
 
 -- Login regenerate. Not intended for SELECT
@@ -437,10 +469,10 @@ SELECT
 	user_id AS id, 
 	GROUP_CONCAT( DISTINCT roles.label ) AS label,
 	GROUP_CONCAT( 
-		COALESCE( '{}', rp.settings ), ',' 
+		COALESCE( rp.settings, '{}' ), ',' 
 	) AS privilege_settings,
 	GROUP_CONCAT( 
-		COALESCE( '{}', pr.settings ), ',' 
+		COALESCE( pr.settings, '{}' ), ',' 
 	) AS provider_settings
 	
 	FROM user_roles
@@ -452,7 +484,31 @@ SQL
 );
 
 
+/**
+ *  Process username
+ */
+function username( string $name ) {
+	static $maxu;
+	if ( !isset( $maxu ) ) {
+		$maxu = 
+		config( 'member_max_user', \MEMBER_MAX_USER, 'int' );
+	}
+	
+	return title( $name, $maxu );
+}
 
+/**
+ *  Helper to turn full username to index-friendly term
+ *  
+ *  @param string	$name		Entered username 
+ *  @return string
+ */
+function cleanUsername( string $name ) {
+	return 
+	username( unifySpaces( lowercase( bland( 
+		normal( $name ) , true 
+	) ), '' );
+}
 
 /**
  *  Reset authenticated user data types for processing
@@ -461,22 +517,42 @@ SQL
  *  @return array
  */
 function formatAuthUser( array $user ) : array {
+	$user['is_approved']	??= false;
+	$user['is_locked']	??= false;
+	$user['user_settings']	??= [];
+	
 	return [
 		'id'		=> ( int ) ( $user['id'] ?? 0 ), 
 		'status'	=> ( int ) ( $user['status'] ?? 0 ), 
 		'name'		=> $user['name'] ?? '', 
-		'hash'		=> $user['hash'] ?? '', 
-		'auth'		=> $user['auth'] ?? ''
+		'hash'		=> $user['hash'] ?? '',
+		'is_approved'	=> $user['is_approved'] ? true : false,
+		'is_locked'	=> $user['is_locked'] ? true : false, 
+		'auth'		=> $user['auth'] ?? '',
+		'settings'	=> 
+			\is_array( $user['user_settings'] ) ? 
+				$user['user_settings'] : []
 	];
 }
 
 /**
  *  Check user authentication session
  *  
+ *  @param bool		$delete		Forget existing auth if true
  *  @return array
  */
-function authUser() : array {
+function authUser( bool $delete = false ) : array {
+	static $user;
 	sessionCheck();
+	
+	if ( $delete ) {
+		unset( $user );
+		return [];
+	}
+	
+	if ( isset( $user ) ) {
+		return $user;
+	}
 	
 	if ( 
 		empty( $_SESSION['user'] ) || 
@@ -496,19 +572,22 @@ function authUser() : array {
 		if ( empty( $user ) ) {
 			return [];
 		}
-		
-		// Fetched results must be 6 rows
-		if ( \count( $user ) !== 6 ) { return []; }
+		// Reset data types
+		$user	= formatAuthUser( $user );
 		
 		// User found, apply authorization
 		setAuth( $user, true );
+		
+		// Update activity
+		updateUserActivity( $user['id'], 'active' );
 		return $_SESSION['user'];
 		
 	} else {
 		// Fetched results must be a 4-item array
 		$user		= $_SESSION['user'];
-		if ( \count( $user ) !== 4 ) { 
+		if ( \count( $user ) !== 8 ) { 
 			$_SESSION['user']	= '';
+			unset( $user );
 			return []; 
 		}
 	}
@@ -516,16 +595,16 @@ function authUser() : array {
 	// Reset data types
 	$user			= formatAuthUser( $user );
 	
-	// Check session against current browser signature
-	$sig			= signature();
-	$hash			= 
-	\hash( 'tiger160,4', $sig . $user['hash'] );
+	// Check if current browser changed since auth token creation
+	$auth			= 
+	\hash( 'tiger160,4', getUA() . $user['hash'] );
 	
-	// Check browser signature against auth token
-	if ( 0 != \strcmp( 
-		( string ) $user['auth'], $hash 
-	) ) { return []; }
-		
+	if ( 0 != \strcmp( ( string ) $user['auth'], $auth ) ) { 
+		unset( $user );
+		return []; 
+	}
+	
+	updateUserActivity( $user['id'], 'active' );
 	return $user;
 }
 	
@@ -537,19 +616,18 @@ function authUser() : array {
  */
 function setAuth( array $user, bool $cookie ) {
 	sessionCheck();
+	$auth			= 
+	\hash( 'tiger160,4', getUA() . $user['hash'] );
 	
-	// Reset data types
-	$user			= formatAuthUser( $user );
-	$sig			= signature();
-	$hash			= 
-	\hash( 'tiger160,4', $sig . $user['hash'] );
-	
-	
+	// Set user session data
 	$_SESSION['user']	= [
 		'id'		=> $user['id'],
 		'status'	=> $user['status'],
 		'name'		=> $user['name'],
-		'auth'		=> $hash
+		'is_approved'	=> $user['is_approved'],
+		'is_locked'	=> $user['is_locked'],
+		'auth'		=> $auth,
+		'settings'	=> $user['settings']
 	];
 	
 	if ( $cookie ) {
@@ -563,7 +641,12 @@ function setAuth( array $user, bool $cookie ) {
  */
 function endAuth() {
 	sessionCheck( true );
-	\setcookie( 'user', '', time() - \COOKIE_EXP, \COOKIE_PATH );
+	
+	// Delete existing auth
+	authUser( true );
+	
+	// Delete lookup cookie
+	deleteCookie( 'user' );
 }
 
 
@@ -1170,6 +1253,150 @@ function findUserByUsername( string $username ) : array {
 }
 
 /**
+ *  Update the last activity IP of the given user
+ *  Most of these actions use triggers in the database
+ *  
+ *  @param int		$id	User unique identifier
+ *  @param string	$mode	Activity type
+ *  @return bool
+ */
+function updateUserActivity(
+	int	$id, 
+	string	$mode	= '' 
+) : bool {
+	
+	$now	= utc();
+	switch ( $mode ) {
+		case 'active':
+			$sql	= 
+			"UPDATE auth_activity SET 
+				last_ip		= :ip, 
+				last_ua		= :ua, 
+				last_session_id = :sess 
+				WHERE user_id = :id;";
+			
+			$params = [
+				':ip'	=> getIP(), 
+				':ua'	=> getUA(), 
+				':sess'	=> \session_id(), 
+				':id'	=> $id
+			];
+			break;
+			
+		case 'login':
+			$sql	= 
+			"UPDATE auth_activity SET 
+				last_ip		= :ip, 
+				last_ua		= :ua, 
+				last_login	= :login, 
+				last_session_id = :sess 
+				WHERE user_id = :id;";
+			
+			$params = [
+				':ip'		=> getIP(), 
+				':ua'		=> getUA(),
+				':login'	=> $now,
+				':sess'		=> \session_id(),
+				':id'		=> $id
+			];
+			break;
+		
+		case 'passchange':
+			// Change table itself instead of the view
+			$sql	= 
+			"UPDATE user_auth SET 
+				last_ip			= :ip, 
+				last_ua			= :ua, 
+				last_active		= :active,
+				last_pass_change	= :change, 
+				last_session_id		= :sess 
+				WHERE user_id = :id;";
+			
+			$params = [
+				':ip'		=> getIP(), 
+				':ua'		=> getUA(),
+				':active'	=> $now,
+				':change'	=> $now,
+				':sess'		=> \session_id(),
+				':id'		=> $id
+			];
+			break;
+		
+		case 'failedlogin':
+			$sql	= 
+			"UPDATE auth_activity SET 
+				last_ip			= :ip, 
+				last_ua			= :ua, 
+				last_session_id		= :sess, 
+				failed_last_attempt	= :fdate
+				WHERE user_id = :id;";
+				
+			$params = [
+				':ip'		=> getIP(), 
+				':ua'		=> getUA(),
+				':sess'		=> \session_id(),
+				':fdate'	=> $now,
+				':id'		=> $id
+			];
+			break;
+		
+		case 'lock':
+			$sql	= 
+			"UPDATE auth_activity SET 
+				is_locked = 1 WHERE id = :id;";
+			$params	= [ ':id' => $id ];
+			break;
+			
+		case 'unlock':
+			$sql	= 
+			"UPDATE user_auth SET 
+				is_locked = 0 WHERE id = :id;";
+			$params	= [ ':id' => $id ];
+			break;
+		
+		case 'approve':
+			$sql	= 
+			"UPDATE user_auth SET 
+				is_approved = 1 WHERE id = :id;";
+			$params	= [ ':id' => $id ];
+			break;
+			
+		case 'unapprove':
+			$sql	= 
+			"UPDATE user_auth SET 
+				is_approved = 0 WHERE id = :id;";
+			$params	= [ ':id' => $id ];
+			break;
+			
+		default:
+			// First run? Create or replace auth basics
+			
+			// Auto approve new auth?
+			$ap = 
+			config( 'auto_approve_reg', 
+				\AUTO_APPROVE_REG, 'bool' );
+			
+			return 
+			setInsert( 
+				"REPLACE INTO user_auth ( 
+					user_id, last_ip, last_ua, 
+					last_session_id, is_approved
+				) VALUES( :id, :ip, :ua, :sess, :ap );", 
+				[
+					':id'	=> $id, 
+					':ip'	=> getIP(), 
+					':ua'	=> getUA(),
+					':sess'	=> \session_id(),
+					':ap'	=> $ap ? 1 : 0
+				], 
+				\FORUM_DATA 
+			) ? true : false;
+	}
+	
+	return setUpdate( $sql, $params, \FORUM_DATA );
+}
+
+/**
  *  Login user credentials
  *  
  *  @param string	$username	Login name to search
@@ -1313,8 +1540,14 @@ function processLogin( array $data, int &$status ) {
 			// "Remember me"
 			$rem	=  ( bool ) ( $data['rem'] ?? 0 );
 			
+			// Format auth user
+			$user	= formatAuthUser( $user );
+			
 			// Set login session
 			setAuth( $user, $rem );
+			
+			// Set login activity
+			updateUserActivity( $user['id'], 'login' );
 			
 			// Check a redirect path
 			$path	= $data['all'] ?? '';
@@ -1382,8 +1615,14 @@ function processRegister( array $data ) {
 	// "Remember me"
 	$rem		=  ( bool ) ( $data['rem'] ?? 0 );
 	
+	// Format data
+	$user		= formatAuthUser( $existing );
+	
+	// Create auth
+	updateUserActivity( $user['id'] );
+	
 	// Set authentication
-	setAuth( $existing, $rem );
+	setAuth( $user, $rem );
 	
 	// Check a redirect path
 	$path		=
@@ -1402,7 +1641,7 @@ function memberDBCreated( string $event, array $hook, array $params ) {
 	
 	// New user database was created
 	if ( 0 == \strcmp( $params['dbname'], \MEMBER_DATA ) ) {
-		$user	= title( \MEMBER_ADMIN_USER );
+		$user	= username( \MEMBER_ADMIN_USER );
 		
 		if ( 
 			empty( $user ) ||
@@ -1414,11 +1653,12 @@ function memberDBCreated( string $event, array $hook, array $params ) {
 		
 		$id	= 
 		dataExec( 
-			"INSERT INTO users ( username, password ) 
-				VALUES ( :user, :pass );", 
+			"INSERT INTO users ( username, uesr_clean, password ) 
+				VALUES ( :user, :clean, :pass );", 
 			[ 
-				':user' => $user,
-				':pass'	=> hashPassword( \MEMBER_ADMIN_PASS )
+				':user'		=> $user,
+				':clean'	=> cleanUsername( $user ), 
+				':pass'		=> hashPassword( \MEMBER_ADMIN_PASS )
 			], 
 			'insert', 
 			\MEMBER_DATA 
