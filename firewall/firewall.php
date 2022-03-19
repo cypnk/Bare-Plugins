@@ -1358,7 +1358,7 @@ function fw_insertLog( string $reason = '' ) {
 	}
 	
 	$db	= getDb( \FIREWALL_DATA );
-	$stm	= $db->prepare( \FIREWALL_DB_INSERT );
+	$stm	= statement( $db, \FIREWALL_DB_INSERT );
 	$stm->execute( [
 		':reason'	=> empty( $reason ) ? 'Unknown' : $reason,
 		':ip'		=> getIP(), 
@@ -1367,6 +1367,7 @@ function fw_insertLog( string $reason = '' ) {
 		':method'	=> getMethod(), 
 		':headers'	=> \implode( "\n", httpHeaders() )
 	] );
+	$stm->closeCursor();
 }
 
 function fw_start() {
