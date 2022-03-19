@@ -1170,6 +1170,7 @@ function findCookie( string $lookup ) : array {
 	// First find lookup
 	if ( $stm->execute( [ ':lookup' => $lookup ] ) ) {
 		$results = $stm->fetchAll();
+		$stm->closeCursor();
 	}
 	
 	// No logins found
@@ -1205,6 +1206,8 @@ function resetLookup( int $id ) : string {
 	);
 	
 	if ( $stm->execute( [ ':id' => $id ] ) ) {
+		$stm->closeCursor();
+		
 		// SQLite should have generated a new random lookup
 		$rst = 
 		$db->prepare( 
@@ -1213,10 +1216,12 @@ function resetLookup( int $id ) : string {
 		);
 		
 		if ( $rst->execute( [ ':id' => $id ] ) ) {
-			return $stm->fetchColumn();
+			$col = $rst->fetchColumn();
+			$rst->closeCursor();
+			return $col;
 		}
 	}
-	
+	$stm->closeCursor();
 	return '';
 }
 
